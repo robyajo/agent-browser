@@ -717,6 +717,21 @@ class Bridge:
                         {"id": "web-ai", "object": "model", "owned_by": "snapgent"},
                     ]
                 }
+                # Merge models from Antigravity Bridge if running
+                try:
+                    up_r, up_w = await asyncio.wait_for(asyncio.open_connection("127.0.0.1", 20129), timeout=1.0)
+                    up_w.write(b"GET /v1/models HTTP/1.1\r\nHost: 127.0.0.1:20129\r\nConnection: close\r\n\r\n")
+                    await up_w.drain()
+                    raw_resp = await asyncio.wait_for(up_r.read(), timeout=1.0)
+                    up_w.close()
+                    if b"\r\n\r\n" in raw_resp:
+                        raw_body = raw_resp.split(b"\r\n\r\n", 1)[1]
+                        extra = json.loads(raw_body.decode("utf-8", errors="replace"))
+                        if isinstance(extra.get("data"), list):
+                            models_data["data"].extend(extra["data"])
+                except Exception:
+                    pass
+
                 body = json.dumps(models_data).encode("utf-8")
                 resp_headers = (
                     "HTTP/1.1 200 OK\r\n"
@@ -741,6 +756,35 @@ class Bridge:
                 messages = payload.get("messages", [])
                 stream = bool(payload.get("stream", True))
                 model = payload.get("model", "deepseek-web")
+
+                # If non-web model, forward transparently to Antigravity Bridge on port 20129
+                web_models = ("deepseek-web", "qwen-web", "web-ai")
+                if model not in web_models:
+                    try:
+                        up_reader, up_writer = await asyncio.open_connection("127.0.0.1", 20129)
+                        req_str = f"{method} {path} HTTP/1.1\r\n"
+                        for k, v in headers.items():
+                            if k.lower() != "host":
+                                req_str += f"{k}: {v}\r\n"
+                        req_str += "Host: 127.0.0.1:20129\r\n\r\n"
+                        up_writer.write(req_str.encode("utf-8") + body_bytes)
+                        await up_writer.drain()
+
+                        while True:
+                            chunk = await up_reader.read(4096)
+                            if not chunk:
+                                break
+                            writer.write(chunk)
+                            await writer.drain()
+                        up_writer.close()
+                        await up_writer.wait_closed()
+                    except Exception as e:
+                        err_body = json.dumps({"error": {"message": f"Proxy error to Antigravity Bridge: {e}"}}).encode("utf-8")
+                        writer.write(b"HTTP/1.1 502 Bad Gateway\r\nContent-Type: application/json\r\n\r\n" + err_body)
+                        await writer.drain()
+                    finally:
+                        writer.close()
+                    return
 
                 user_msgs = [m for m in messages if isinstance(m, dict) and m.get("role") == "user"]
                 prompt = user_msgs[-1].get("content", "") if user_msgs else (messages[-1].get("content", "") if messages else "")
