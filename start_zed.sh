@@ -86,32 +86,36 @@ echo -e "  ${YELLOW}[3/4] Configuring MCP servers (Zed + VS Code)...${NC}"
 "$PY" "./setup-config.py" >/dev/null 2>&1 || true
 echo -e "        ${GREEN}✓ zed_mcp.py configured (28 workspace tools)${NC}"
 
-# 4. Check existing bridge process on port
-echo -e "  ${YELLOW}[4/4] Checking port ${BRIDGE_PORT}...${NC}"
+# 4. Check existing bridge process on ports 17613 and 17614
+HTTP_PORT="${ZS_HTTP_PORT:-17614}"
+echo -e "  ${YELLOW}[4/4] Checking ports ${BRIDGE_PORT} and ${HTTP_PORT}...${NC}"
 if command -v lsof >/dev/null 2>&1; then
-    OLD_PIDS="$(lsof -ti "tcp:$BRIDGE_PORT" -s TCP:LISTEN 2>/dev/null || true)"
-    for old_pid in $OLD_PIDS; do
-        OLD_COMMAND="$(ps -p "$old_pid" -o args= 2>/dev/null || true)"
-        if [[ "$OLD_COMMAND" == *bridge.py* ]]; then
-            echo -e "        ${YELLOW}Stopping previous bridge process (PID $old_pid)...${NC}"
-            kill -TERM "$old_pid" 2>/dev/null || true
-            sleep 1
-        fi
+    for port in "$BRIDGE_PORT" "$HTTP_PORT"; do
+        OLD_PIDS="$(lsof -ti "tcp:$port" -s TCP:LISTEN 2>/dev/null || true)"
+        for old_pid in $OLD_PIDS; do
+            OLD_COMMAND="$(ps -p "$old_pid" -o args= 2>/dev/null || true)"
+            if [[ "$OLD_COMMAND" == *bridge.py* ]]; then
+                echo -e "        ${YELLOW}Stopping previous bridge process (PID $old_pid)...${NC}"
+                kill -TERM "$old_pid" 2>/dev/null || true
+                sleep 1
+            fi
+        done
     done
 fi
-echo -e "        ${GREEN}✓ Port ${BRIDGE_PORT} is ready${NC}"
+echo -e "        ${GREEN}✓ Ports ${BRIDGE_PORT} (WebSocket) and ${HTTP_PORT} (OpenAI HTTP) are ready${NC}"
 
 echo
-echo -e "${GREEN}${BOLD}  🚀 Bridge is ready to start!${NC}"
+echo -e "${GREEN}${BOLD}  🚀 Bridge & OpenAI Proxy Siap Dijalankan!${NC}"
 echo -e "  --------------------------------------------------------"
-echo -e "  ${BOLD}Cara Pakai:${NC}"
-echo -e "  1. Pastikan ekstensi Snapgent terpasang di Chrome/Brave/Edge."
-echo -e "  2. Buka salah satu chat AI:"
-echo -e "     • DeepSeek : ${CYAN}https://chat.deepseek.com${NC}"
+echo -e "  ${BOLD}Cara Pakai (Chat Langsung di Dalam Zed Editor):${NC}"
+echo -e "  1. Buka tab chat di browser (biarkan terbuka di background):"
+echo -e "     • DeepSeek : ${CYAN}https://chat.deepseek.com${NC} atau"
 echo -e "     • Qwen     : ${CYAN}https://chat.qwen.ai${NC}"
-echo -e "  3. Di bar Snapgent pada halaman web, pilih target: ${BOLD}${GREEN}zed${NC}"
-echo -e "  4. Buka project Anda di Zed Editor."
-echo -e "  5. Berikan instruksi coding di chat web DeepSeek/Qwen!"
+echo -e "  2. Buka project Anda di Zed Editor."
+echo -e "  3. Buka panel Agent Zed (${BOLD}Ctrl + ?${NC})."
+echo -e "  4. Pilih model: ${BOLD}${GREEN}DeepSeek Web (Snapgent Free)${NC} atau ${BOLD}${GREEN}Qwen Web (Snapgent Free)${NC}"
+echo -e "  5. Chat langsung di Zed! Prompt akan diteruskan ke browser di latar belakang,"
+echo -e "     dan jawabannya di-stream balik ke Zed Editor secara real-time!"
 echo -e "  --------------------------------------------------------"
 echo -e "  ${YELLOW}Tekan Ctrl+C untuk menghentikan bridge.${NC}"
 echo
