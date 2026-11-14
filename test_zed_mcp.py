@@ -107,6 +107,15 @@ class WorkspaceResolutionTests(unittest.TestCase):
                 zed_mcp.WORKSPACE_OVERRIDE = None
                 self.assertEqual(zed_mcp.get_root(), tmppath)
 
+    def test_zed_active_folder_priority_over_cwd(self):
+        with tempfile.TemporaryDirectory() as tmp_zed_ws:
+            zed_ws = Path(tmp_zed_ws).resolve()
+            with patch.dict("os.environ", {}, clear=True):
+                zed_mcp.WORKSPACE_OVERRIDE = None
+                with patch.object(zed_mcp, "_zed_active_folder", return_value=zed_ws):
+                    # Even if CWD is something else, zed active folder takes precedence
+                    self.assertEqual(zed_mcp.get_root(), zed_ws)
+
 
 if __name__ == "__main__":
     unittest.main()

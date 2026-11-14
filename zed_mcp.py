@@ -158,25 +158,30 @@ def get_root() -> Path:
         if candidate.is_dir():
             return candidate
 
-    # 2. Current working directory (if launched from within a project)
-    cwd = Path.cwd().resolve()
-    if cwd != Path(cwd.root) and cwd != Path.home():
-        if (cwd / ".git").exists() or any((cwd / f).exists() for f in ("package.json", "Cargo.toml", "pyproject.toml", "go.mod", ".zed")):
-            return cwd
-
-    # 3. Detect active folder from Zed Editor DB
+    # 2. Detect active folder from Zed Editor DB (primary source of truth for Zed)
     zed_folder = _zed_active_folder()
     if zed_folder is not None:
         return zed_folder.resolve()
 
-    # 4. If CWD is a non-root folder, fallback to CWD
-    if cwd != Path(cwd.root):
+    # 3. Current working directory (if launched from within a project and not connector's own dir)
+    cwd = Path.cwd().resolve()
+    this_dir = Path(__file__).resolve().parent
+    if cwd != Path(cwd.root) and cwd != Path.home() and cwd != this_dir:
+        if (cwd / ".git").exists() or any((cwd / f).exists() for f in ("package.json", "Cargo.toml", "pyproject.toml", "go.mod", ".zed")):
+            return cwd
+
+    # 4. If CWD is a non-root folder (and not connector's own dir), fallback to CWD
+    if cwd != Path(cwd.root) and cwd != this_dir:
         return cwd
 
     # 5. Fallback to VS Code if active
     vscode_folder = _vscode_active_folder()
     if vscode_folder is not None:
         return vscode_folder.resolve()
+
+    # 6. Fallback to CWD even if connector dir if nothing else was found
+    if cwd != Path(cwd.root):
+        return cwd
 
     raise RuntimeError("No active workspace found. Open a project in Zed or specify --workspace.")
 
