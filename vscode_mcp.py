@@ -227,10 +227,8 @@ def list_tree(path: str = ".", max_depth: int = 3) -> List[Dict[str, Any]]:
 def find_files(path: str = ".", pattern: str = "*") -> List[str]:
     root = get_root()
     base = normalize_target(path, root)
-    if not base.exists():
-        raise FileNotFoundError(f"Path not found: {path}")
-    if not base.is_dir():
-        raise NotADirectoryError(f"Not a directory: {path}")
+    if not base.exists() or not base.is_dir():
+        return []
     matches = [
         _relative(file_path, root)
         for file_path in _iter_files(base)
