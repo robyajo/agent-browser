@@ -1,78 +1,47 @@
-# snapgentV3 Free - AI Roblox Studio Agent (ChatGPT, Claude, DeepSeek, Gemini, Grok, Kimi, GLM, Qwen, Arena, Meta AI, Ptero)
+# Agent Browser - Free AI Coding Agent for VS Code & Zed Editor
 
-Control Roblox Studio with AI, for free. snapgentV3 turns a normal AI chat (ChatGPT, Claude, DeepSeek, Google Gemini, Grok, Kimi, GLM, Qwen, Arena, Meta AI, or Ptero) into an agent that builds and scripts your Roblox game for you: just describe what you want, and it reads/edits scripts, runs Luau, inspects the game tree, and generates assets directly in Roblox Studio. No API key, no terminal, no coding required.
+Turn web AI chatbots (**DeepSeek**, **Qwen**, **ChatGPT**, **Claude**, **Google Gemini**, **Grok**, **Kimi**, **GLM**, **Arena**, **Meta AI**, or **Ptero**) into powerful coding agents directly inside **VS Code** and **Zed Editor** without API keys, subscriptions, or credit cards.
 
-It's a Chrome/Edge browser extension plus a small local bridge that connects the chat to Roblox Studio or VS Code through MCP. **DeepSeek is the recommended provider.** ChatGPT, Claude, Gemini, Grok, Kimi, GLM, Qwen, Arena, Meta AI and Ptero also work. Grok requires signing in to xAI. On ChatGPT and Claude, screenshots and image input are disabled in this integration. ChatGPT also summarises its own context in long sessions, so snapgentV3 re-states its operating instructions periodically (shown as a "Reminder" chip) to stop it forgetting it can run commands. Gemini and Kimi can be less stable: Gemini tends to stop using the Roblox tools in long sessions, and Kimi sometimes reaches for its own native tools instead of the Roblox commands. On Arena, keep the mode dropdown on **Direct** (snapgentV3 only supports Direct mode).
+Just describe what you want in chat, and the agent reads workspace files, edits code, lists directory trees, and inspects files directly in your local editor.
 
-VS Code is the default **MCP target**. The bridge can start before VS Code, but open the intended project folder in VS Code before clicking **Start** in the chat bar. You can switch to Roblox Studio in the chat bar when its MCP server is enabled. The AI selector beside it opens the supported chat providers.
+## Key Features
+
+- **Dual Editor Support**:
+  - **VS Code**: Uses `vscode/*` tools (e.g. `vscode/read_file`, `vscode/write_file`, 28 workspace tools).
+  - **Zed Editor**: Uses `zededitor/*` tools (e.g. `zededitor/read_file`, `zededitor/write_file`, 28 workspace tools).
+- **Free Web Models**: Use cutting-edge free web models (DeepSeek-V3 / R1, Qwen 2.5 Max / Coder) directly or connect Zed Editor to the local OpenAI-compatible reverse proxy (`http://127.0.0.1:17614/v1`).
+- **No API Keys Needed**: Interacts through your existing browser session.
 
 ## Setup
 
-**Load the extension manually (Edge or Chrome):**
-1. Go to `edge://extensions` (Edge) or `chrome://extensions` (Chrome)
-2. Enable **Developer mode** (top right toggle)
-3. Click **Load unpacked**
-4. Select the `snapgent-extension` folder
-5. The extension is now active
+### 1. Load the extension (Chrome / Edge / Brave)
+1. Go to `chrome://extensions` or `edge://extensions`.
+2. Enable **Developer mode** (top-right toggle).
+3. Click **Load unpacked**.
+4. Select the `snapgent-extension` folder.
 
-**Then set up the Bridge:**
-1. **Download the Bridge** from the [SnapgentV3 release](https://github.com/herdodp/snapgent-connector/releases/tag/V3)
-2. **Run the Bridge** - on Windows, double-click `start.bat`; it configures MCP automatically and can run before VS Code is open. Open the project folder in VS Code before clicking **Start** in the chat bar. Roblox Studio is optional: open a place and enable **Assistant AI** > **...** > **Manage MCP Servers** > **Enable Studio as MCP Server** to use that target too.
-4. On macOS, double-click `MacOS_Start.command`; the current macOS launcher does not auto-configure VS Code MCP, so configure it in the local `config.json` if you want to use that target. The first launch may show a Gatekeeper warning (normal for downloaded scripts): click **Done**, then **System Settings > Privacy & Security**, scroll down, and click **Open Anyway**.
-5. **Go to https://chat.deepseek.com** (recommended), https://chatgpt.com, https://claude.ai, https://gemini.google.com, https://grok.com, https://www.kimi.ai or https://kimi.ai, https://chat.z.ai, https://chat.qwen.ai, https://arena.ai, https://www.meta.ai, or https://ptero.pro, open a new chat (only works on these exact addresses; sign in to Grok first; on Arena use Direct mode)
-6. Click **Start session** in the snapgentV3 panel
-7. Type what you want to build
+### 2. Start the Local Bridge
+- **Linux & macOS**: Run `./start_zed.sh` (or `Linux_Start.sh` / `MacOS_Start.command`).
+- **Windows**: Double-click `start_zed.bat` (or `start.bat`).
 
-## Architecture (for contributors)
+### 3. Open Your Editor & Start Coding!
+- **For VS Code**: Open your project workspace in VS Code, choose **VS Code** in the extension target menu, open your preferred AI chat tab (e.g., https://chat.deepseek.com or https://chat.qwen.ai), and click **Start**.
+- **For Zed Editor**: Open your project in Zed Editor, configure `settings.json` (see instructions in repository README), open the Zed Assistant panel, and select **Snapgent DeepSeek (Web Free)** or **Snapgent Qwen (Web Free)**.
+
+## Architecture
 
 The extension is split between a provider-agnostic core and per-AI-site providers:
 
 ```
-core/config.js        system prompt, feedback strings, tool categories (global ZS)
-core/parser.js        snapgentV3 command parsing - pure string logic   (global ZSParse)
-core/main.js          agentic loop, UI, camouflage, session state      (uses ZSProvider)
-providers/deepseek.js everything DeepSeek-specific: DOM selectors, generation
-                      detection, send mechanics, composer modes…       (global ZSProvider)
-providers/gemini.js   same interface for Google Gemini (Angular DOM, Quill
-                      composer, code-block masking)                    (global ZSProvider)
-providers/claude.js   same interface for Claude (contenteditable composer,
-                      message and generation detection)                 (global ZSProvider)
-providers/kimi.js     same interface for Kimi / Moonshot AI (Vue DOM, Lexical
-                      composer, segment-code masking)                  (global ZSProvider)
-providers/glm.js      same interface for GLM / Z.ai (Svelte DOM, code-block
-                      wrapper masking)                                 (global ZSProvider)
-providers/qwen.js     same interface for Qwen / chat.qwen.ai (Vue DOM, network-tap
-                      SSE stream, Monaco disposal guard)               (global ZSProvider)
-providers/qwen-net.js MAIN-world fetch tap for Qwen SSE stream        (injected by manifest)
-providers/chatgpt.js  same interface for ChatGPT / chatgpt.com (React DOM,
-                      ProseMirror composer, CodeMirror reply reading) (global ZSProvider)
-providers/chatgpt-cm.js MAIN-world CodeMirror tap: republishes each code block's
-                      TRUE document (the rendered DOM truncates long
-                      lines)                                          (injected by manifest)
-providers/arena.js    same interface for Arena / arena.ai (React DOM, multi-model
-                      playground, A/B-comparison auto-commit, Direct-mode gate) (global ZSProvider)
-providers/meta.js     same interface for Meta AI / meta.ai (React DOM, textarea
-                      composer, JSON-viewer + code-collapse masking)   (global ZSProvider)
-providers/ptero.js    same interface for Ptero / ptero.pro (textarea composer,
-                      message and generation detection)                 (global ZSProvider)
-providers/grok.js     same interface for Grok / grok.com (ProseMirror
-                      composer, message and generation detection)        (global ZSProvider)
-providers/mistral.js  same interface for Mistral / chat.mistral.ai (Vibe Code;
-                      generic selectors, needs live-site testing)        (global ZSProvider)
-background.js         WebSocket to the local bridge (provider-agnostic)
+core/config.js        system prompt, dynamic prefixing (vscode/ vs zededitor/), tool categories
+core/parser.js        command parsing - pure string logic
+core/main.js          agentic loop, UI, session state
+providers/deepseek.js DeepSeek web chat integration
+providers/qwen.js     Qwen web chat integration
+providers/claude.js   Claude web chat integration
+providers/chatgpt.js  ChatGPT web chat integration
+providers/...         Gemini, Grok, Kimi, GLM, Arena, Meta AI, Ptero, Mistral
+background.js         WebSocket to local bridge (port 17613) and tab router
 ```
 
-`core/main.js` never touches the host site's DOM directly - it only calls the
-`ZSProvider` interface. To integrate another AI site: write a new
-`providers/<site>.js` exporting the same interface, then add its URL pattern to
-`manifest.json` (`content_scripts` + `host_permissions`) and to
-`PROVIDER_URLS` in `background.js`. No core change required.
-
-Smoke tests (plain Node, no dependencies - run them from this directory):
-
-- `node test-parser.js` - the command parser (`core/parser.js`).
-- `node test-chatgpt.js` - ChatGPT reply reading (`providers/chatgpt.js`),
-  driven against a stub DOM: CodeMirror line joining, the `data-zs-cm`
-  MAIN-world tap that long code blocks depend on, and subtree exclusion.
-
-Both print `PASS`/`FAIL` per case and exit non-zero on failure.
+Repository: [https://github.com/robyajo/agent-browser](https://github.com/robyajo/agent-browser)

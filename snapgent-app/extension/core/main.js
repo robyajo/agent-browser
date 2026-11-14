@@ -78,8 +78,8 @@
     }, EXPECT);
   }
 
-  // GitHub releases page - where users download the Bridge + start.bat.
-  const GITHUB_URL = "https://github.com/herdodp/snapgent-connector";
+  // GitHub releases page - where users download the Bridge + start scripts.
+  const GITHUB_URL = "https://github.com/robyajo/agent-browser";
   // AI chat sites snapgentV3 works on. Keep in sync with manifest.json
   // content_scripts and background.js PROVIDER_URLS when adding a provider.
   const AI_SITES = [

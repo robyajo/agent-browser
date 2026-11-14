@@ -1,307 +1,226 @@
 <div align="center">
 
-<a href="https://github.com/herdodp/snapgent-connector">
-<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=800&size=52&duration=3000&pause=1000&color=FACC15&center=true&vCenter=true&width=700&height=90&lines=snapgentV3;+Connector+agent+MCP" alt="snapgentV3: Connector agent for VS Code" />
+<a href="https://github.com/robyajo/agent-browser">
+<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=800&size=48&duration=3000&pause=1000&color=FACC15&center=true&vCenter=true&width=750&height=90&lines=Agent+Browser;+Snapgent+Connector;+Free+Web+AI+for+VS+Code+%26+Zed" alt="Agent Browser: Snapgent Connector for VS Code & Zed Editor" />
 </a>
 
-<p><b>Turn any AI chatbot browser to many app via MCP</b></p>
-
-<p><a href="https://discord.gg/rvaZ8KkvAX"><b>💬 Join Discord</b></a> to report problem</p>
+<p><b>Turn any AI chatbot browser (DeepSeek, Qwen, Claude, ChatGPT) into a powerful coding agent for VS Code & Zed Editor via MCP</b></p>
 
 [![License](https://img.shields.io/badge/LICENSE-GPL--3.0-FACC15?style=flat-square&labelColor=111111&logo=opensourceinitiative&logoColor=FACC15)](LICENSE)
 [![Manifest](https://img.shields.io/badge/MANIFEST-V3-FACC15?style=flat-square&labelColor=111111&logo=googlechrome&logoColor=FACC15)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3/)
-[![Release](https://img.shields.io/badge/RELEASE-V3.9.5-FACC15?style=flat-square&labelColor=111111&logo=semanticrelease&logoColor=FACC15)](https://github.com/herdodp/snapgent-connector/releases/tag/V3.9.5)
 [![MCP](https://img.shields.io/badge/PROTOCOL-MCP-FACC15?style=flat-square&labelColor=111111&logo=modelcontextprotocol&logoColor=FACC15)](https://modelcontextprotocol.io/)
+[![GitHub Repo](https://img.shields.io/badge/GITHUB-robyajo%2Fagent--browser-blue?style=flat-square&logo=github)](https://github.com/robyajo/agent-browser)
 
 </div>
 
 ```console
 
-  ███████╗███╗   ██╗ █████╗ ██████╗  ██████╗ ███████╗███╗   ██╗████████╗
-  ██╔════╝████╗  ██║██╔══██╗██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝
-  ███████╗██╔██╗ ██║███████║██████╔╝██║  ███╗█████╗  ██╔██╗ ██║   ██║
-  ╚════██║██║╚██╗██║██╔══██║██╔═══╝ ██║   ██║██╔══╝  ██║╚██╗██║   ██║
-  ███████║██║ ╚████║██║  ██║██║     ╚██████╔╝███████╗██║ ╚████║   ██║
-  ╚══════╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝      ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝
+  █████╗  ██████╗ ███████╗███╗   ██╗████████╗    ██████╗ ██████╗  ██████╗ ██╗    ██╗███████╗███████╗██████╗ 
+ ██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝    ██╔══██╗██╔══██╗██╔═══██╗██║    ██║██╔════╝██╔════╝██╔══██╗
+ ███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║       ██████╔╝██████╔╝██║   ██║██║ █╗ ██║███████╗█████╗  ██████╔╝
+ ██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║       ██╔══██╗██╔══██╗██║   ██║██║███╗██║╚════██║██╔══╝  ██╔══██╗
+ ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║       ██████╔╝██║  ██║╚██████╔╝╚███╔███╔╝███████║███████╗██║  ██║
+ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝       ╚═════╝ ╚═╝  ╚═╝ ╚═════╝  ╚══╝╚══╝ ╚══════╝╚══════╝╚═╝  ╚═╝
 
-  > browser extension + local bridge for VS Code and MCP
-  > no API key · no terminal · no copy-paste
+  > Browser Extension + Local Bridge for VS Code & Zed Editor (MCP + OpenAI Reverse Proxy)
+  > No API key · No subscription · 100% Free Web Models (DeepSeek & Qwen)
 ```
 
-snapgentV3 is a browser extension plus a local bridge that connects a normal AI chat to **VS Code**. It automatically uses the currently open workspace. Describe what you want in plain language — the extension forwards commands to the selected server through the local bridge, and returns the results to chat.
+**Agent Browser (Snapgent Connector)** connects your favorite browser-based AI chats (DeepSeek, Qwen, ChatGPT, Claude, Gemini, etc.) directly to your code editors: **VS Code** and **Zed Editor**.
 
-**Free and open source — no API key, subscription, or sign-in required.** snapgentV3 automatically uses the currently open VS Code workspace.
-
----
-
-- **Installation:** [Watch Installation Video](https://youtu.be/eo3sdtPSBso)
-- **Demo:** [Watch Demo Video](https://youtu.be/HY0YWsHLp34)
-
-- **MCP support**
-<img src="assets/mcpsupport.jpeg" width="300" alt="Logo Project">
-
-- **Test snapgent connector + effect craft motion from artcraft** [Watch Video](https://youtu.be/wH_gpAWpA8E)
-<table>
-<tr>
-<td width="100%" valign="top">
-
-### 💻 VS Code
-The default target. Automatically connects to the workspace currently open in VS Code.
-
-</td>
-</tr>
-</table>
+Describe what you want in plain language — the agent reads, creates, and edits files, searches directory structures, and inspects errors directly inside your active workspace.
 
 ---
 
-## `01` &nbsp; How it works
+## ⚡ Key Highlights
 
-```
-┌─────────────┐     plain-text      ┌──────────────────┐    WebSocket    ┌────────────┐    MCP    ┌────────────────┐
-│  AI chat    │ ───  commands  ───▶ │ snapgentV3       │ ──────────────▶ │  Bridge    │ ────────▶ │ Selected MCP   │
-│  (browser)  │ ◀──  results   ───  │ browser extension│ ◀────────────── │ (local)    │ ◀──────── │ target         │
-└─────────────┘                     └──────────────────┘                 └────────────┘           └────────────────┘
-```
-
-1. **You** describe a task in a supported AI chat.
-2. The **AI** replies with a snapgentV3 command.
-3. The **extension** detects the command and forwards it to the local bridge.
-4. The **bridge** routes it to the VS Code MCP server.
-5. The **result** is sent back into chat, and the AI continues working.
-
-VS Code's MCP server is configured locally by `start.bat`; it detects the open VS Code workspace automatically.
+- 🆓 **100% Free — No API Key Required**: Leverages web sessions from DeepSeek (`chat.deepseek.com`), Qwen (`chat.qwen.ai`), Claude, ChatGPT, etc.
+- 🎯 **Dual Editor Support**:
+  - **VS Code**: Native workspace auto-detection with `vscode/*` tools (e.g. `vscode/read_file`, `vscode/write_file`).
+  - **Zed Editor**: Native Assistant integration with `zededitor/*` tools (e.g. `zededitor/read_file`, `zededitor/write_file`).
+- 🔄 **OpenAI-Compatible Reverse Proxy (Port 17614)**: Allows Zed Editor's Assistant panel to directly chat and execute tools using DeepSeek Web and Qwen Web!
+- 🖥️ **Full Multiplatform Support**: Ready-to-run launchers for **Linux**, **macOS**, and **Windows**.
+- 🛠️ **28 Rich Workspace Tools per Editor**: File reading, batch edits, patch application, regex search, directory listings, command execution, and workspace info.
 
 ---
 
-## Snapgent App (standalone, Windows)
+## 🚀 Quick Start
 
-Prefer not to load an extension or run the bridge yourself? **Snapgent App** is a standalone desktop app (Electron) with a built-in AI browser, a toolbar, and the bridge built in. It needs no Chrome/Edge, no `start.bat`, no Python and no Node.js.
+### 1. Load the Browser Extension
 
-**Download** (`app-v0.1.1`): [Releases > app-v0.1.1](https://github.com/herdodp/snapgent-connector/releases/tag/app-v0.1.1)
-
-| File | Use |
-|---|---|
-| `Snapgent.Setup.0.1.1.exe` | Installer (recommended) |
-| `Snapgent.Setup.0.1.1.exe.blockmap` | Update metadata, not needed for a normal install |
-
-**How to use**
-
-1. Install and open Snapgent. It opens `claude.ai` inside the app and keeps your login in its own profile.
-2. Click the workspace button in the toolbar and choose your project folder.
-3. Chat as usual. The agent bar appears on the page and runs the commands in the selected folder.
-
-**Known limitations (0.1.1)**
-
-- The exe is **not code-signed**, so Windows SmartScreen may warn. Click **More info**, then **Run anyway**.
-- **Google sign-in has not been fully tested.** If it fails, log in with email and password on the Claude page.
-- Windows only. The default Electron icon is still used.
-
-**Build from source**
-
-The source is in [`snapgent-app/`](snapgent-app). It carries its own copy of the extension code (`snapgent-app/extension`), separate from `snapgent-extension/`.
-
-```
-cd snapgent-app
-npm install
-npm start        # run in development
-npm run dist     # build the Windows installer into dist/
-```
-
-`snapgent-app/bin/vscode_mcp.exe` is not stored in Git. Build it from `snapgent-app/mcp/vscode_mcp.py` with PyInstaller (see `vscode_mcp.spec`) and place it in `snapgent-app/bin/` before running `npm run dist`.
-
----
-
-## `02` &nbsp; Supported AI providers
-
-| Provider | URL | Status | Notes |
-|---|---|---|---|
-| **ChatGPT** | `chatgpt.com` | ✅ Supported | Image input and screenshots are disabled |
-| **Claude** | `claude.ai` | ✅ Supported | Image input and screenshots are disabled |
-| **Google Gemini** | `gemini.google.com` | ✅ Supported | May stop using tools in long sessions |
-| **Kimi** | `kimi.ai` | ✅ Supported | May use its native tools in some sessions |
-| **Grok** | `grok.com` | ✅ Supported | Requires signing in to xAI |
-| **Mistral (Vibe Code)** | `chat.mistral.ai` | 🧪 Experimental | Requires signing in to Mistral; selectors need testing on the live site |
-| **GLM (Z.ai)** | `chat.z.ai` | ✅ Supported | |
-| **Qwen** | `chat.qwen.ai` | ✅ Supported | |
-| **Arena** | `arena.ai` | ✅ Supported | Use **Direct** mode |
-| **Meta AI** | `meta.ai` | ✅ Supported | |
-| **Ptero** | `ptero.pro` | ✅ Supported | |
-
-> Provider activation is configured in `manifest.json` (`content_scripts` and `host_permissions`) and `PROVIDER_URLS` in `background.js`.
-
----
-
-## `03` &nbsp; Requirements
-
-- **Microsoft Edge** or **Google Chrome** (Manifest V3).
-- **VS Code** for the default target. Keep the workspace you want to use open in VS Code.
-- **Windows**, **macOS**, or **Linux** for the bridge.
-- **Python 3.9+** on macOS and Linux. Windows includes the bridge executable.
-- The bridge running while you use the agent.
-
----
-
-## `04` &nbsp; Installation
-
-**① Load the extension**
-
-1. Download and extract the [latest SnapgentV3 release](https://github.com/herdodp/snapgent-connector/releases/tag/V3.9.5).
-2. Open `edge://extensions` (Edge) or `chrome://extensions` (Chrome).
-3. Enable **Developer mode**.
+1. Clone or download this repository:
+   ```bash
+   git clone https://github.com/robyajo/agent-browser.git
+   cd agent-browser
+   ```
+2. Open your browser extension management page:
+   - **Chrome / Brave**: `chrome://extensions`
+   - **Edge**: `edge://extensions`
+3. Enable **Developer mode** (toggle in the top-right corner).
 4. Click **Load unpacked** and select the `snapgent-extension` folder.
-5. The snapgentV3 icon appears in your browser toolbar.
-
-**② Set up the MCP target**
-
-For VS Code, open the project folder you want to work on before clicking **Start** in the chat bar. The bridge can be started before VS Code; the agent waits until a workspace is available and does not fall back to the Snapgent release folder.
-
-**③ Start the bridge**
-
-- **Windows** — double-click `start.bat`. It configures VS Code MCP automatically.
-  You can start the bridge before VS Code.
-  Machine-specific settings are written to the ignored local `config.json`.
-- **macOS** — double-click `MacOS_Start.command`. It detects the bundled
-  VS Code MCP server, Roblox Studio's MCP executable, and an installed
-  EffectCraft CLI, then writes their machine-specific paths to the ignored
-  local `config.json`. This launcher uses `bridge.py`; it does not run the
-  Windows-only `bridge.exe`.
-- **Linux** — open a terminal in the extracted release folder and run
-  `bash Linux_Start.sh`. It detects the bundled VS Code MCP server and
-  installed EffectCraft CLI, then writes
-  machine-specific paths to the ignored local `config.json`. It uses
-  `bridge.py`; the first launch installs `websockets` for your user, or creates
-  a local Python environment if your distribution blocks user installs.
-
-Keep the terminal window open while the bridge runs. On macOS, the first
-launch may show a Gatekeeper warning; select **Done**, then allow the script
-under **System Settings → Privacy & Security**.
-
-**Optional: connect EffectCraft**
-
-On Windows, `start.bat` detects EffectCraft in common install locations and
-starts its control channel automatically. On macOS, install the separate
-EffectCraft CLI release and put `effectcraft-cli` on your `PATH`; the launcher
-detects it and starts the app's control channel when EffectCraft is installed
-in `/Applications` or `~/Applications`. On Linux, install the EffectCraft CLI
-and put `effectcraft-cli` on your `PATH`; the launcher detects it and starts
-EffectCraft when its executable is available on `PATH` or in a common
-installation location. On any system, save your work and close EffectCraft
-before restarting the launcher if EffectCraft is already open without the
-control channel. When the bridge connects, choose
-**EffectCraft** in the MCP target selector on the chat bar.
-
-On macOS, Roblox Studio MCP is detected at
-`/Applications/RobloxStudio.app/Contents/MacOS/StudioMCP`; set
-`ZS_STUDIO_MCP_PATH` before launching if it is installed elsewhere.
-Linux does not auto-detect Roblox Studio MCP. If you have a compatible Linux
-MCP executable, set `ZS_STUDIO_MCP_PATH` to its path before running the
-launcher; Roblox Studio itself may not be available on your Linux distribution.
-
-**④ Start a session**
-
-1. Open a supported AI chat site and start a new chat.
-2. Open a project folder in VS Code before clicking **Start**.
-3. Click **Start** and describe what you want to make.
-
-**⑤ Updating to a new release**
-
-The extension and the bridge are two separate parts, and each one has to be updated. Reloading only the extension does not update the bridge, and the **Restart** button in the extension popup only restarts the MCP servers, it does not load new bridge code.
-
-1. Get the new version: run `git pull` in the project folder, or download and extract the [latest release](https://github.com/herdodp/snapgent-connector/releases/latest).
-2. Stop the old bridge: close the terminal window that is running `start.bat`, `MacOS_Start.command` or `Linux_Start.sh`.
-3. Start the bridge again with the same launcher. The launcher replaces an old bridge still holding port 17613. On Linux it first checks that the process on the port is a Snapgent bridge, and stops with an error if it belongs to another program.
-4. Reload the extension at `chrome://extensions` (or `edge://extensions`), then refresh open chat tabs (F5).
-5. Check the versions: click the snapgentV3 icon. The popup header shows `ext vX · bridge vY`, and both numbers should match the release you installed. The bridge also writes `snapgent bridge vY` to its startup log.
-
-If the popup shows `bridge old`, the bridge is still running old code: repeat steps 2 and 3. On macOS and Linux, also make sure there is no old executable file named `bridge` in the folder, because the launcher runs it instead of `bridge.py`.
-
-> **Windows note (V3.9.4):** `start.bat` runs the bundled `bridge.exe`, which was rebuilt for V3.9.4 and includes the large-response fix, the version display and parallel server startup. If the popup still shows `bridge old`, close `start.bat` and start it again so the new `bridge.exe` is used. To run the bridge from source instead, install Python 3.9+ and `py -3 -m pip install websockets`, then run `py -3 bridge.py` in the project folder.
+5. The **Agent Browser** icon will appear in your browser toolbar.
 
 ---
 
-## `05` &nbsp; Usage
+### 2. Start the Local Bridge
 
-Once a session is running, just talk to the AI normally:
+Run the launcher for your operating system:
 
-> "Inspect the files in my project and explain how the login flow works."
-
-> "Add a search bar to the books page and wire it to the existing API."
-
-The AI sends commands, snapgentV3 runs them in the selected target (VS Code by default), and the results appear in chat. You can give the AI another instruction at any time.
-
-**Tips**
-
-- Keep the bridge window open — closing it disconnects the agent.
-- Keep your intended project open in VS Code; it is the default MCP target.
-- On **Arena**, use **Direct** mode.
-- If **Gemini** or **Kimi** stops using tools in a long session, remind it to use the snapgentV3 commands or start a new chat.
-
----
-
-## `06` &nbsp; Architecture
-
-The extension is split into a **provider-agnostic core** and **per-site providers**. The core talks to each AI site through the `ZSProvider` interface.
-
-```
-core/config.js              system prompt, feedback, tool categories
-core/parser.js              snapgentV3 command parsing
-core/main.js                agent loop, UI, session state
-providers/<site>.js         site-specific selectors and chat integration
-background.js               WebSocket connection to the local bridge
-manifest.json               browser permissions and content scripts
-```
-
-The bridge routes commands to the configured MCP servers. Windows uses the
-bundled `bridge.exe`; macOS and Linux run the cross-platform `bridge.py` with
-Python.
-
----
-
-## `07` &nbsp; Project structure
-
-```
-snapgent-full/
-├── snapgent-extension/        # Load this folder as an unpacked extension
-│   ├── core/                  # Shared prompt, parser, agent loop, and UI
-│   ├── providers/             # Per-AI-site integrations
-│   ├── background.js          # Local bridge connection
-│   ├── manifest.json          # Manifest V3 configuration
-│   └── test-*.js              # Smoke tests
-├── assets/                    # Project images
-├── setup-config.ps1           # Configures Windows MCP servers
-├── setup-config.py            # Detects MCP servers on macOS and Linux
-├── config.json                # Generated locally by launchers (not tracked)
-├── start.bat                  # Windows bridge launcher
-├── MacOS_Start.command        # macOS bridge launcher
-├── Linux_Start.sh             # Linux bridge launcher
-├── bridge.exe                 # Windows local bridge
-├── bridge.py                  # Cross-platform Python MCP bridge
-├── vscode_mcp.exe             # Default VS Code MCP server (28 workspace tools)
-├── vscode_mcp.py              # VS Code MCP server source
-├── test_bridge.py             # MCP bridge protocol tests
-├── test_setup_config.py       # MCP setup helper tests
-└── vscode_mcp.spec            # PyInstaller build recipe
-```
-
----
-
-## `08` &nbsp; Troubleshooting
-
-| Symptom | Likely cause | Fix |
+| Operating System | Recommended Command / Script | Alternative |
 |---|---|---|
-| snapgentV3 bar is missing | Extension is disabled or site access is blocked | Check the extension is enabled and allowed on the current AI chat site, then reload the tab |
-| Bridge is offline | Bridge is not running | Start `start.bat` (Windows), `MacOS_Start.command` (macOS), or run `bash Linux_Start.sh` (Linux) |
-| AI replies without using tools | Provider/model stopped following commands | Remind it to use snapgentV3 commands or start a new chat |
-| VS Code target is unavailable | The bridge is offline or the release is incomplete | Run `start.bat` from the extracted release folder and keep the project open in VS Code |
-| A configured MCP server is missing from the target dropdown | The server was switched off in the **MCP servers** panel, or the extension is outdated | Open **MCP servers** from the ⋯ menu on the snapgent bar and tick the server, then reload the extension in `chrome://extensions` and refresh the chat tab |
-| Target dropdown closes or the click does nothing | Older extension versions redrew the menu during status updates | Update to the latest release and reload the extension |
+| **Linux** | `./start_zed.sh` | `bash Linux_Start.sh` |
+| **macOS** | `./start_zed.sh` | Double-click `MacOS_Start.command` |
+| **Windows** | `start_zed.bat` | Double-click `start.bat` |
+
+The launcher will:
+- Verify Python 3.9+ and dependencies (`websockets`).
+- Auto-configure MCP servers (`vscode_mcp.py` & `zed_mcp.py`).
+- Start the WebSocket bridge on `ws://127.0.0.1:17613`.
+- Start the OpenAI reverse proxy on `http://127.0.0.1:17614/v1`.
 
 ---
 
-<div align="center">
+## 📐 Editor Setup
 
-**Built for creators who want to spend more time making.**
+### Option A: Using with Zed Editor
 
-[Latest release V3.9.5](https://github.com/herdodp/snapgent-connector/releases/tag/V3.9.5) · [Issues](https://github.com/herdodp/snapgent-connector/issues) · [License](LICENSE)
+You can chat with the AI directly from Zed Editor's Assistant panel without ever touching the browser window!
 
-</div>
+#### 1. Configure Zed `settings.json`
+Open your Zed configuration file:
+- **Linux**: `~/.config/zed/settings.json`
+- **macOS**: `~/Library/Application Support/Zed/settings.json`
+- **Windows**: `%APPDATA%\Zed\settings.json`
+
+Add the `language_models` block:
+
+```json
+{
+  "language_models": {
+    "openai": {
+      "api_url": "http://127.0.0.1:17614/v1",
+      "available_models": [
+        {
+          "name": "deepseek-web",
+          "display_name": "Snapgent DeepSeek (Web Free)",
+          "max_tokens": 16384
+        },
+        {
+          "name": "qwen-web",
+          "display_name": "Snapgent Qwen (Web Free)",
+          "max_tokens": 16384
+        }
+      ]
+    }
+  }
+}
+```
+
+#### 2. Start Chatting in Zed
+1. Ensure the bridge is running (`./start_zed.sh` or `start_zed.bat`).
+2. Keep a browser tab open with `https://chat.deepseek.com` or `https://chat.qwen.ai` logged in.
+3. In Zed Editor, open the Assistant panel (`Ctrl + ?` or `Cmd + ?`).
+4. Select model: **Snapgent DeepSeek (Web Free)** or **Snapgent Qwen (Web Free)**.
+5. Ask your prompt! The AI uses prefix-aware commands like `zededitor/read_file` to interact with your workspace.
+
+---
+
+### Option B: Using with VS Code
+
+1. Open your target project folder in **VS Code**.
+2. Make sure the bridge is running (`./start_zed.sh` or `start.bat`).
+3. In the browser extension or on the AI chat page (e.g. DeepSeek / Claude / ChatGPT):
+   - Choose **VS Code** in the MCP target dropdown.
+   - Click **Start session**.
+4. The AI will interact with your VS Code project using `vscode/*` tools.
+
+---
+
+## 🏗️ How it Works
+
+```
+┌────────────────────────────────┐
+│   Web AI Chat (Browser Tab)    │
+│  DeepSeek / Qwen / Claude / .. │
+└───────────────▲────────────────┘
+                │ DOM / Extension
+┌───────────────▼────────────────┐         WebSocket
+│    Agent Browser Extension     │ ───────────────────────┐
+│     (Chrome / Edge MV3)        │                        │
+└────────────────────────────────┘                        │
+                                                          ▼
+┌───────────────────────────────┐     HTTP (OpenAI)    ┌───────────────────────────┐
+│          Zed Editor           │ ◀──────────────────▶ │  Snapgent Local Bridge    │
+│  (Assistant / Agent Panel)    │      port 17614      │   • WebSocket: port 17613 │
+└───────────────────────────────┘                      │   • OpenAI Proxy: 17614   │
+                                                       └─────────────▲─────────────┘
+                                                                     │ Stdio MCP
+                                                       ┌─────────────▼─────────────┐
+                                                       │   Local MCP Servers       │
+                                                       │  • vscode_mcp (28 tools)  │
+                                                       │  • zed_mcp    (28 tools)  │
+                                                       └───────────────────────────┘
+```
+
+---
+
+## 🌐 Supported AI Providers (In Browser)
+
+| Provider | URL | Status | Recommended For |
+|---|---|---|---|
+| **DeepSeek** | `chat.deepseek.com` | ✅ Supported | **Best performance & speed** |
+| **Qwen** | `chat.qwen.ai` | ✅ Supported | **Excellent coding capability** |
+| **ChatGPT** | `chatgpt.com` | ✅ Supported | General coding |
+| **Claude** | `claude.ai` | ✅ Supported | Complex reasoning |
+| **Google Gemini** | `gemini.google.com` | ✅ Supported | Multimodal tasks |
+| **Kimi** | `kimi.ai` | ✅ Supported | Fast response |
+| **Grok** | `grok.com` | ✅ Supported | Requires xAI sign-in |
+| **GLM (Z.ai)** | `chat.z.ai` | ✅ Supported | Multilingual |
+| **Arena** | `arena.ai` | ✅ Supported | Model benchmarking (Use Direct mode) |
+| **Meta AI** | `meta.ai` | ✅ Supported | General tasks |
+| **Ptero** | `ptero.pro` | ✅ Supported | Privacy-focused |
+| **Mistral** | `chat.mistral.ai` | 🧪 Experimental | Open weights models |
+
+---
+
+## 📂 Project Structure
+
+```
+agent-browser/
+├── snapgent-extension/        # Browser extension (Chrome / Edge MV3)
+│   ├── core/                  # Prompt engine, parser, agent loop, UI
+│   │   ├── config.js          # Dynamic prefixes (vscode/ vs zededitor/)
+│   │   ├── parser.js          # Command parsing
+│   │   └── main.js            # Agent loop & UI bar
+│   ├── providers/             # Per-AI DOM selectors & stream handlers
+│   ├── popup.html             # Status popup & Zed setup guide
+│   └── manifest.json          # Extension manifest V3
+├── bridge.py                  # Core bridge (WebSocket + OpenAI reverse proxy)
+├── vscode_mcp.py              # VS Code MCP server (28 tools)
+├── zed_mcp.py                 # Zed Editor MCP server (28 tools)
+├── setup-config.py            # Cross-platform MCP configuration generator
+├── start_zed.sh               # Linux & macOS unified startup script
+├── start_zed.bat              # Windows unified startup script
+├── Linux_Start.sh             # Linux bridge launcher
+├── MacOS_Start.command        # macOS bridge launcher
+└── start.bat                  # Windows bridge launcher
+```
+
+---
+
+## ❓ Troubleshooting
+
+| Issue | Cause | Solution |
+|---|---|---|
+| **Bridge Offline** in extension | Bridge process is not running | Run `./start_zed.sh` (Linux/Mac) or `start_zed.bat` (Windows). |
+| **Zed: "No models available"** | `settings.json` missing or port 17614 blocked | Verify `language_models` in Zed's `settings.json` points to `http://127.0.0.1:17614/v1`. |
+| **Tool calling fails with "Unknown tool"** | Outdated config or wrong prefix | Ensure you use `vscode/*` when VS Code is selected, or `zededitor/*` when Zed Editor is selected. |
+| **AI stops executing commands** | Context window reached or model lost prompt | Send a short prompt: *"Continue using tools to complete the task"*, or start a fresh chat tab. |
+
+---
+
+## 📜 License
+
+Licensed under the **GPL-3.0 License**. See [LICENSE](LICENSE) for details.
+
+Repository: [https://github.com/robyajo/agent-browser](https://github.com/robyajo/agent-browser)

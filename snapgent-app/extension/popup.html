@@ -167,7 +167,7 @@
 <body>
   <div class="wrap">
     <header>
-      <h1>snapgentV3 <span class="ver" id="ver"></span></h1>
+      <h1>Agent Browser <span class="ver" id="ver"></span></h1>
       <!-- <span class="badge">DeepSeek</span> --> <!-- DeepSeek hidden (disabled, not deleted) -->
     </header>
 
@@ -194,8 +194,13 @@
         <span>Konfigurasi Zed Editor</span>
         <button id="close-zed-guide" style="width:auto; min-height:unset; padding:2px 6px; font-size:10px;">✕</button>
       </div>
-      <p style="margin:0 0 6px;"><b>1. Terminal:</b> Jalankan <code>./start_zed.sh</code> di folder connector.</p>
-      <p style="margin:0 0 6px;"><b>2. Zed Editor:</b> Buka <code>~/.config/zed/settings.json</code>:</p>
+      <p style="margin:0 0 6px;"><b>1. Terminal:</b> Jalankan <code>./start_zed.sh</code> (Linux/Mac) atau <code>start_zed.bat</code> (Windows).</p>
+      <p style="margin:0 0 6px;"><b>2. Zed Editor:</b> Buka <code>settings.json</code> Zed:</p>
+      <ul style="margin:0 0 6px; padding-left:16px; color:var(--muted); font-size:10px;">
+        <li>Linux: <code>~/.config/zed/settings.json</code></li>
+        <li>macOS: <code>~/Library/Application Support/Zed/settings.json</code></li>
+        <li>Windows: <code>%APPDATA%\Zed\settings.json</code></li>
+      </ul>
       <pre style="background:rgba(0,0,0,0.4); padding:6px; border-radius:6px; font-size:10px; overflow-x:auto; user-select:all; margin:0 0 6px;">"language_models": {
   "openai": {
     "api_url": "http://127.0.0.1:17614/v1",
@@ -209,7 +214,7 @@
     </div>
 
     <p class="hint">
-      Start with <code>./start_zed.sh</code> or <code>start.bat</code>.
+      Start with <code>./start_zed.sh</code> or <code>start_zed.bat</code>.
     </p>
   </div>
   <script src="popup.js"></script>

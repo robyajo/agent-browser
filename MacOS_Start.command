@@ -101,7 +101,7 @@ fi
 echo "        OK"
 log "websockets library OK."
 
-# --- 3. Configure MCP servers and start optional EffectCraft ----------------
+# --- 3. Configure VS Code & Zed Editor MCP ----------------
 if [ -f "./setup-config.py" ]; then
     echo "  [3/4] Configuring VS Code & Zed Editor MCP..."
     if ! "$PY" "./setup-config.py"; then
