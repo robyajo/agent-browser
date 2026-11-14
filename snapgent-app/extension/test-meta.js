@@ -118,6 +118,56 @@ const provider = new Function(
 
   console.log("PASS Meta send is accepted when generation starts before the mirror textarea clears");
   console.log("PASS current Meta AI input and aria-labelled Send/Stop controls are supported");
+
+  // Test 3: Contenteditable Lexical div with Enter fallback and user message turn detection
+  const lexicalDiv = {
+    tagName: "DIV",
+    textContent: "",
+    attrs: { contenteditable: "true", "data-testid": "composer-input" },
+    offsetParent: {},
+    focus() {},
+    closest() { return null; },
+    querySelector() { return null; },
+    getClientRects() { return [{ width: 300, height: 40 }]; },
+    setAttribute(name, value) { this.attrs[name] = value; },
+    removeAttribute(name) { delete this.attrs[name]; },
+    getAttribute(name) { return this.attrs[name] ?? null; },
+    dispatchEvent(event) {
+      if (event.type === "keydown" && event.key === "Enter") {
+        // Simulate Lexical reacting to Enter key
+        this.textContent = "";
+        userMessages.push({ tagName: "DIV", querySelector: () => null });
+      }
+    },
+  };
+  const userMessages = [];
+  const kirimButton = {
+    tagName: "BUTTON",
+    attrs: { "aria-label": "Kirim" },
+    offsetParent: {},
+    disabled: false,
+    getAttribute(name) { return this.attrs[name] ?? null; },
+    getClientRects() { return [{ width: 30, height: 30 }]; },
+    click() {
+      // Simulate click ignored by Lexical
+    },
+    dispatchEvent() {},
+  };
+
+  global.document.querySelectorAll = (selector) => {
+    if (selector.includes("composer-input")) return [lexicalDiv];
+    if (selector.includes("Kirim") || selector.includes("Send")) return [kirimButton];
+    if (selector.includes("user-message")) return userMessages;
+    return [];
+  };
+
+  provider.setInputLock(true);
+  assert.strictEqual(provider.getEditor(), lexicalDiv);
+  await provider.typeAndSend("test lexical prompt");
+  assert.strictEqual(userMessages.length, 1, "Enter fallback dispatched and user message counted");
+  assert.strictEqual(provider.userCount(), 1, "userCount sees user-message");
+  provider.setInputLock(false);
+  console.log("PASS Lexical contenteditable with Enter fallback and user-message detection supported");
 })().catch((error) => {
   console.error(error);
   process.exitCode = 1;

@@ -53,6 +53,7 @@ const ZSProvider = (() => {
 
   const S = {
     asst: '[data-testid="assistant-message"]',
+    user: '[data-testid="user-message"]',
     // The composer SWAPS element when media is attached: text-only it is a
     // <textarea data-testid="composer-input">; once an image is staged Meta hides
     // that textarea and shows a Lexical contenteditable <div data-testid=
@@ -65,20 +66,25 @@ const ZSProvider = (() => {
       'input[placeholder*="Meta AI"]',
       'textarea[placeholder*="Meta AI"]',
       '[contenteditable="true"][role="textbox"]',
+      'div[contenteditable="true"]',
     ].join(","),
     sendBtn: [
       '[data-testid="composer-send-button"]',
       'button[aria-label="Send"]',
       'button[aria-label="Send message"]',
+      'button[aria-label="Kirim"]',
+      'button[aria-label="Kirim pesan"]',
       'button[aria-label="Envoyer"]',
       'button[aria-label="Envoyer le message"]',
+      'button[aria-label*="Send" i]',
+      'button[aria-label*="Kirim" i]',
+      'button[aria-label*="Envoyer" i]',
     ].join(","),
     stopBtn: [
       '[data-testid="composer-stop-button"]',
-      'button[aria-label*="Stop"]',
-      'button[aria-label*="stop"]',
-      'button[aria-label*="Arrêter"]',
-      'button[aria-label*="arrêter"]',
+      'button[aria-label*="Stop" i]',
+      'button[aria-label*="Arrêter" i]',
+      'button[aria-label*="Berhenti" i]',
     ].join(","),
     newChat: '[data-testid="new-chat-button"]',
     // Response-mode dropdown: the button shows the current mode ("Instantané" /
@@ -124,15 +130,15 @@ const ZSProvider = (() => {
   // assistant-message and >1 child turn. Climb from any assistant-message to it;
   // fall back to the nearest such container. Returns null on a fresh/empty chat.
   function listEl() {
-    const any = document.querySelector(S.asst);
+    const any = document.querySelector(`${S.asst}, ${S.user}`);
     if (!any) return null;
     let n = any.parentElement;
     for (let i = 0; i < 12 && n; i++, n = n.parentElement) {
       if (
         n.classList.contains("flex") &&
         n.classList.contains("flex-col") &&
-        n.children.length >= 2 &&
-        n.querySelector(S.asst)
+        n.children.length >= 1 &&
+        (n.querySelector(S.asst) || n.querySelector(S.user))
       ) {
         return n;
       }
@@ -151,7 +157,7 @@ const ZSProvider = (() => {
   function isTurnChild(c) {
     if (!c) return false;
     if (c.classList.contains("pointer-events-none") && c.classList.contains("absolute")) return false;
-    return !!c.querySelector(S.asst) || (c.textContent || "").trim().length > 0;
+    return !!c.querySelector(S.asst) || !!c.querySelector(S.user) || (c.textContent || "").trim().length > 0;
   }
   function domTurns() {
     const list = listEl();
@@ -172,7 +178,12 @@ const ZSProvider = (() => {
   const allItems = () => domTurns();
   const assistantItems = () => allItems().filter(isAssistantItem);
   const assistantCount = () => assistantItems().length;
-  const userCount = () => allItems().filter(isUserItem).length;
+  const userCount = () => {
+    const fromTurns = allItems().filter(isUserItem).length;
+    let direct = 0;
+    try { direct = document.querySelectorAll(S.user).length; } catch {}
+    return Math.max(fromTurns, direct);
+  };
   const lastAssistant = () => {
     const it = assistantItems();
     return it.length ? it[it.length - 1] : null;
@@ -327,6 +338,11 @@ const ZSProvider = (() => {
            all.find((e) => e.getClientRects().length > 0) || all[0] || null;
   };
   const visibleEditor = getEditor; // alias (kept for call-site clarity)
+  const visibleEditorText = () => {
+    const vis = visibleEditor();
+    if (!vis) return "";
+    return isValueEditor(vis) ? (vis.value || "") : (vis.textContent || "");
+  };
   // Prefer Meta's controlled textarea/input when present; otherwise use its
   // contenteditable editor directly.
   const writeEl = () => editorEls().find((e) => e.tagName === "TEXTAREA") ||
@@ -340,7 +356,7 @@ const ZSProvider = (() => {
   const composerFrame = () => barAnchor() || (visibleEditor() && visibleEditor().parentElement) || null;
 
   // A fresh chat: root path "/" with the composer present and no turns.
-  const isFreshChat = () => chatIsEmpty() && location.pathname === "/" && !!getEditor();
+  const isFreshChat = () => chatIsEmpty() && (location.pathname === "/" || location.pathname === "") && !!getEditor();
 
   // Meta is a React app that reconciles the composer subtree, so we do NOT insert
   // #zs-bar into it. barAnchor() returns the rounded composer card; the core
@@ -404,12 +420,30 @@ const ZSProvider = (() => {
   }
 
   // ── Buttons / generation detection ──────────────────────────────────────────
-  const sendButton = () => [...document.querySelectorAll(S.sendBtn)].find((b) =>
-    b.getClientRects().length > 0 &&
-    !/stop|arrêter/i.test((b.getAttribute("aria-label") || "") + " " + (b.getAttribute("data-testid") || ""))
-  ) || null;
+  const sendButton = () => {
+    const list = [...document.querySelectorAll(S.sendBtn)].filter((b) =>
+      (b.getClientRects().length > 0 || (b.offsetWidth && b.offsetHeight) || b.offsetParent !== null) &&
+      !/stop|arrêter|berhenti/i.test((b.getAttribute("aria-label") || "") + " " + (b.getAttribute("data-testid") || ""))
+    );
+    if (list.length) return list[0];
+    const frame = composerFrame();
+    if (frame) {
+      const candidates = [...frame.querySelectorAll("button")].filter((b) => {
+        if (b.getClientRects().length === 0 && !b.offsetWidth && !b.offsetHeight && b.offsetParent === null) return false;
+        const testid = b.getAttribute("data-testid") || "";
+        const aria = b.getAttribute("aria-label") || "";
+        if (/stop|arrêter|berhenti/i.test(aria + " " + testid)) return false;
+        if (/mode|dropdown|attach|file|upload|mic|voice/i.test(aria + " " + testid)) return false;
+        return true;
+      });
+      if (candidates.length) return candidates[candidates.length - 1];
+    }
+    return null;
+  };
   const stopButton = () =>
-    [...document.querySelectorAll(S.stopBtn)].find((b) => b.getClientRects().length > 0) || null;
+    [...document.querySelectorAll(S.stopBtn)].find((b) =>
+      b.getClientRects().length > 0 || (b.offsetWidth && b.offsetHeight) || b.offsetParent !== null
+    ) || null;
 
   function streamText(item) {
     const b = bodyOf(item);
@@ -503,6 +537,7 @@ const ZSProvider = (() => {
   // naturally excludes history.
   const pendingPreview = () => {
     for (const ci of editorEls()) {
+      if (!ci || typeof ci.querySelector !== "function") continue;
       const img = ci.querySelector("img");
       if (img) return img;
     }
@@ -540,13 +575,100 @@ const ZSProvider = (() => {
   }
 
   // ── Sending ─────────────────────────────────────────────────────────────────
+  function setContentEditableText(ed, text) {
+    if (!ed) return;
+    try { ed.focus(); } catch {}
+    try {
+      if (typeof window !== "undefined" && typeof window.getSelection === "function" && typeof document.createRange === "function") {
+        const sel = window.getSelection();
+        if (sel) {
+          const range = document.createRange();
+          range.selectNodeContents(ed);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+      }
+    } catch {}
+    let inserted = false;
+    try {
+      if (typeof document !== "undefined" && typeof document.execCommand === "function") {
+        inserted = document.execCommand("insertText", false, text);
+      }
+    } catch {}
+    if (!inserted || (ed.textContent || "").trim() !== text.trim()) {
+      try {
+        ed.textContent = text;
+        if (typeof InputEvent !== "undefined") {
+          ed.dispatchEvent(new InputEvent("input", {
+            bubbles: true,
+            inputType: "insertText",
+            data: text,
+          }));
+        } else if (typeof Event !== "undefined") {
+          ed.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+      } catch {}
+    }
+  }
+
   function setTextareaValue(el, v) {
-    const ctor = el.tagName === "INPUT" ? window.HTMLInputElement : window.HTMLTextAreaElement;
+    const ctor = el.tagName === "INPUT" ? (typeof window !== "undefined" ? window.HTMLInputElement : null) : (typeof window !== "undefined" ? window.HTMLTextAreaElement : null);
     const proto = ctor && ctor.prototype;
     const setter = proto && Object.getOwnPropertyDescriptor(proto, "value");
     if (setter && setter.set) setter.set.call(el, v);
     else el.value = v;
-    el.dispatchEvent(new Event("input", { bubbles: true }));
+    try { el.dispatchEvent(new Event("input", { bubbles: true })); } catch {}
+    try { el.dispatchEvent(new Event("change", { bubbles: true })); } catch {}
+  }
+
+  function dispatchClick(btn) {
+    if (!btn) return false;
+    try {
+      const opts = { bubbles: true, cancelable: true, view: typeof window !== "undefined" ? window : undefined, button: 0 };
+      if (typeof PointerEvent !== "undefined") {
+        try { btn.dispatchEvent(new PointerEvent("pointerdown", opts)); } catch {}
+        try { btn.dispatchEvent(new PointerEvent("pointerup", opts)); } catch {}
+      }
+      if (typeof MouseEvent !== "undefined") {
+        try { btn.dispatchEvent(new MouseEvent("mousedown", opts)); } catch {}
+        try { btn.dispatchEvent(new MouseEvent("mouseup", opts)); } catch {}
+      }
+      btn.click();
+      return true;
+    } catch {
+      try { btn.click(); return true; } catch { return false; }
+    }
+  }
+
+  function pressEnter(el) {
+    if (!el) return false;
+    try {
+      try { el.focus(); } catch {}
+      const o = {
+        key: "Enter",
+        code: "Enter",
+        keyCode: 13,
+        which: 13,
+        shiftKey: false,
+        ctrlKey: false,
+        metaKey: false,
+        altKey: false,
+        bubbles: true,
+        cancelable: true,
+        view: typeof window !== "undefined" ? window : undefined,
+      };
+      if (typeof KeyboardEvent !== "undefined") {
+        try { el.dispatchEvent(new KeyboardEvent("keydown", o)); } catch {}
+        try { el.dispatchEvent(new KeyboardEvent("keypress", o)); } catch {}
+        try { el.dispatchEvent(new KeyboardEvent("keyup", o)); } catch {}
+      } else if (typeof Event !== "undefined") {
+        try { el.dispatchEvent(new Event("keydown", o)); } catch {}
+        try { el.dispatchEvent(new Event("keyup", o)); } catch {}
+      }
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async function typeAndSend(text, images) {
@@ -561,42 +683,120 @@ const ZSProvider = (() => {
         diag("meta.tas.attached", { ok, imgId: images.__zsId });
       } catch (e) { diag("meta.tas.attachErr", { msg: String((e && e.message) || e) }); }
     }
-    // Write via the mirror textarea (the controlled input that drives Lexical).
+
     const editor = writeEl();
-    if (!editor) throw new Error("Meta AI input box not found");
+    const vis = visibleEditor();
+    if (!editor && !vis) throw new Error("Meta AI input box not found");
+
     const usersBeforeSend = userCount();
-    editor.focus();
-    setTextareaValue(editor, text);
-    const sendReady = () => {
-      const b = sendButton();
-      return !!b && !b.disabled && b.getAttribute("aria-disabled") !== "true";
-    };
-    const ready = await waitFor(sendReady, 30000);
-    if (!ready) throw new Error("Meta AI send button did not become available.");
-    // Meta may keep the mirror textarea's value after accepting a send. Treat a
-    // new user turn or the stop button as acceptance too; do not click repeatedly,
-    // since a delayed composer update could otherwise send the same prompt twice.
-    try { sendButton().click(); } catch (error) {
-      throw new Error(`Meta AI send button failed: ${String(error && error.message || error)}`);
+
+    // Temporarily re-enable composer if locked by the core
+    const relock = _locked;
+    if (relock) {
+      if (vis && !isValueEditor(vis)) vis.setAttribute("contenteditable", "true");
+      if (editor && isValueEditor(editor)) editor.removeAttribute("readonly");
     }
-    const sent = await waitFor(() =>
-      (editorText().trim() === "" && !hasPendingAttachment()) ||
-      userCount() > usersBeforeSend ||
-      !!stopButton(),
-    5000);
-    if (sent) _attachedImages = null;
-    diag("meta.tas.sent", {
-      sent,
-      editorLen: editorText().length,
-      newUserTurn: userCount() > usersBeforeSend,
-      generating: !!stopButton(),
-    });
-    if (!sent) {
-      const send = sendButton();
-      throw new Error(
-        `Meta AI did not confirm the message was sent (composer text: ${editorText().length} chars, ` +
-        `send button: ${!!send}, stop button: ${!!stopButton()}). Check the composer and try again.`
-      );
+
+    try {
+      // 1. Controlled mirror input (textarea/input)
+      if (editor && isValueEditor(editor)) {
+        try { editor.focus(); } catch {}
+        setTextareaValue(editor, text);
+      }
+
+      // 2. Visible Lexical contenteditable editor
+      if (vis && !isValueEditor(vis)) {
+        if ((vis.textContent || "").trim() !== text.trim()) {
+          setContentEditableText(vis, text);
+        }
+      } else if (editor && !isValueEditor(editor)) {
+        setContentEditableText(editor, text);
+      }
+
+      let textInserted = false;
+      if (editorText().trim().length > 0 || visibleEditorText().trim().length > 0) {
+        textInserted = true;
+      }
+
+      const sendReady = () => {
+        const b = sendButton();
+        return !!b && !b.disabled && b.getAttribute("aria-disabled") !== "true";
+      };
+
+      const ready = await waitFor(sendReady, 30000);
+      if (!ready) throw new Error("Meta AI send button did not become available.");
+
+      const isSent = () => {
+        if (userCount() > usersBeforeSend) return true;
+        if (stopButton()) return true;
+        if (isGenerating()) return true;
+        if (!hasPendingAttachment() && textInserted) {
+          if (editorText().trim() === "") return true;
+          if (visibleEditorText().trim() === "") return true;
+          const cur = editorText().trim();
+          if (cur !== text.trim() && cur.length < text.trim().length / 2) return true;
+        }
+        return false;
+      };
+
+      // 3. Trigger Send: dispatch click & pointer events
+      const btn = sendButton();
+      if (btn) {
+        dispatchClick(btn);
+        const form = btn.form || (btn.closest && btn.closest("form"));
+        if (form && typeof form.requestSubmit === "function") {
+          try { form.requestSubmit(btn); } catch {}
+        }
+      }
+
+      // 4. Poll for confirmation with fallback triggers
+      let sent = false;
+      const t0 = Date.now();
+      let enterFallbackDone = false;
+      let reClickDone = false;
+
+      while (Date.now() - t0 < 10000) {
+        if (isSent()) {
+          sent = true;
+          break;
+        }
+        // Fallback 1: at 600ms, simulate Enter on the active editor
+        if (Date.now() - t0 > 600 && !enterFallbackDone) {
+          enterFallbackDone = true;
+          const target = (vis && !isValueEditor(vis)) ? vis : editor;
+          pressEnter(target);
+          const b = sendButton();
+          if (b) dispatchClick(b);
+        }
+        // Fallback 2: at 2000ms, retry click & Enter once more
+        if (Date.now() - t0 > 2000 && !reClickDone) {
+          reClickDone = true;
+          const b = sendButton();
+          if (b) dispatchClick(b);
+          const target = (vis && !isValueEditor(vis)) ? vis : editor;
+          pressEnter(target);
+        }
+        await sleep(150);
+      }
+
+      if (sent) _attachedImages = null;
+      diag("meta.tas.sent", {
+        sent,
+        editorLen: editorText().length,
+        visibleLen: visibleEditorText().length,
+        newUserTurn: userCount() > usersBeforeSend,
+        generating: !!stopButton(),
+      });
+
+      if (!sent) {
+        const send = sendButton();
+        throw new Error(
+          `Meta AI did not confirm the message was sent (composer text: ${editorText().length} chars, ` +
+          `send button: ${!!send}, stop button: ${!!stopButton()}). Check the composer and try again.`
+        );
+      }
+    } finally {
+      if (relock) applyLock();
     }
   }
 
