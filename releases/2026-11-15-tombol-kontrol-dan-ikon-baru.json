@@ -1,0 +1,33 @@
+{
+  "date": "2026-11-15",
+  "type": "feature",
+  "project": {
+    "name": "Agent Browser"
+  },
+  "title": {
+    "id": "Tombol Kontrol Otomasi Cepat dan Ikon Baru",
+    "en": "Quick Automation Controls and New App Icon"
+  },
+  "body": {
+    "id": "Pembaruan ini menambahkan tombol kontrol langsung untuk memulai dan menghentikan proses otomasi, akses cepat menu keahlian, serta tampilan ikon aplikasi yang lebih segar.",
+    "en": "This update introduces direct control buttons to start and stop automation, quick access to skills, and a refreshed application icon."
+  },
+  "items": [
+    {
+      "type": "new",
+      "id": "Tombol Mulai dan Berhenti Cepat: Pengguna kini dapat memulai atau menghentikan alur kerja asisten langsung dari menu ekstensi maupun bilah kontrol halaman.",
+      "en": "Quick Start and Stop Controls: Users can now start or halt assistant workflows directly from the extension menu or the in-page bar."
+    },
+    {
+      "type": "new",
+      "id": "Akses Cepat Pengaturan Keahlian: Menambahkan tombol bintang pada bilah interaktif dan menu ekstensi untuk membuka daftar keahlian tanpa langkah tambahan.",
+      "en": "Quick Skills Access: Added a star button on the interactive bar and extension menu to access skills configurations in one step."
+    },
+    {
+      "type": "update",
+      "id": "Desain Ikon Baru: Memperbarui lambang aplikasi dengan tampilan modern beresolusi tinggi yang lebih selaras dengan tema sistem.",
+      "en": "New Icon Design: Updated the application emblem with a high-resolution modern visual style consistent with dark system themes."
+    }
+  ]
+}
+

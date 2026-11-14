@@ -36,6 +36,48 @@ function refresh() {
   chrome.runtime.sendMessage({ type: "status" }, (s) => s && render(s));
 }
 
+function sendToAiTab(message, onTabMissing) {
+  chrome.tabs.query({}, (tabs) => {
+    const active = tabs.find((t) => t.active && t.url && SUPPORTED_HOSTS.some((h) => t.url.includes(h)));
+    const anySupported = active || tabs.find((t) => t.url && SUPPORTED_HOSTS.some((h) => t.url.includes(h)));
+    if (anySupported) {
+      chrome.tabs.sendMessage(anySupported.id, message);
+      chrome.tabs.update(anySupported.id, { active: true });
+    } else if (onTabMissing) {
+      onTabMissing();
+    }
+  });
+}
+
+const btnStart = document.getElementById("btn-start");
+if (btnStart) {
+  btnStart.addEventListener("click", () => {
+    btnStart.textContent = "Starting…";
+    sendToAiTab({ type: "zs-start" }, () => {
+      chrome.tabs.create({ url: DEFAULT_AI_URL });
+    });
+    setTimeout(() => { btnStart.textContent = "▶ Start"; }, 1000);
+  });
+}
+
+const btnStop = document.getElementById("btn-stop");
+if (btnStop) {
+  btnStop.addEventListener("click", () => {
+    btnStop.textContent = "Stopping…";
+    sendToAiTab({ type: "zs-stop" });
+    setTimeout(() => { btnStop.textContent = "■ Stop"; }, 1000);
+  });
+}
+
+const btnStar = document.getElementById("btn-star");
+if (btnStar) {
+  btnStar.addEventListener("click", () => {
+    sendToAiTab({ type: "zs-open-skills" }, () => {
+      chrome.tabs.create({ url: DEFAULT_AI_URL });
+    });
+  });
+}
+
 document.getElementById("reconnect").addEventListener("click", () => {
   chrome.runtime.sendMessage({ type: "reconnect" }, () => setTimeout(refresh, 600));
 });
@@ -49,15 +91,8 @@ document.getElementById("restart").addEventListener("click", (e) => {
 document.getElementById("settings").addEventListener("click", () => {
   // Tries the in-page panel on an already-open supported AI tab first, so
   // opening it doesn't require a conversation to already be started there.
-  chrome.tabs.query({}, (tabs) => {
-    const active = tabs.find((t) => t.active && t.url && SUPPORTED_HOSTS.some((h) => t.url.includes(h)));
-    const anySupported = active || tabs.find((t) => t.url && SUPPORTED_HOSTS.some((h) => t.url.includes(h)));
-    if (anySupported) {
-      chrome.tabs.sendMessage(anySupported.id, { type: "zs-open-menu" });
-      chrome.tabs.update(anySupported.id, { active: true });
-    } else {
-      chrome.tabs.create({ url: DEFAULT_AI_URL });
-    }
+  sendToAiTab({ type: "zs-open-menu" }, () => {
+    chrome.tabs.create({ url: DEFAULT_AI_URL });
   });
 });
 

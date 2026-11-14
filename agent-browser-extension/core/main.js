@@ -2856,6 +2856,7 @@
           <span id="zs-state"></span>
           <button id="zs-action"></button>
           <button id="zs-stop" hidden>■ Stop</button>
+          <button id="zs-star-btn" type="button" class="zs-bar-star" title="Skills (★)" aria-label="Skills">★</button>
           <div class="zs-target-wrap" title="Choose which MCP server receives commands">
             <select id="zs-target" aria-label="MCP target" hidden tabindex="-1">
               <option value="vscode">VS Code</option>
@@ -2925,6 +2926,13 @@
 
       actionBtn.addEventListener("click", onActionClick);
       stopBtn.addEventListener("click", stopLoop);
+      const starBarBtn = root.querySelector("#zs-star-btn");
+      if (starBarBtn) {
+        starBarBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          openSkillsSettings();
+        });
+      }
       unstableEl = root.querySelector("#zs-unstable");
       if (unstableEl) {
         // Set the native tooltip via PROPERTY, not the HTML template: the warning
@@ -2976,6 +2984,7 @@
     function onActionClick() {
       const kind = actionBtn.dataset.kind;
       if (kind === "start" || kind === "start-degraded") startSession();
+      else if (kind === "stop") stopLoop();
     }
 
     // ── Custom prompt (persisted) ───────────────────────────────────────────
@@ -3475,6 +3484,7 @@
           toneClass = "active";
           msg = `<b>Active</b>${tools ? ` · ${tools} tools` : ""} · ${targetNameHtml()}`;
         }
+        label = "■ Stop"; kind = "stop";
       } else if (P.isFreshChat() || P.chatIsEmpty()) {
         const selectedServer = (A.bridge.servers || []).find((item) =>
           item.id === selectedTargetId || (selectedTargetId === "zededitor" && item.id === "zed")
@@ -4180,7 +4190,7 @@
     }
 
     build();
-    return { setStatus, setTarget, getTargetName, staleExtensionAlert, setStarted, setStarting, showStop, markStopping, inputCover, toast, banner, showImages, nudgeStart, updateStartGate, refreshSetup, getCustomPrompt, openMenu: (toSupport) => openMenuFn && openMenuFn(toSupport) };
+    return { setStatus, setTarget, getTargetName, staleExtensionAlert, setStarted, setStarting, showStop, markStopping, inputCover, toast, banner, showImages, nudgeStart, updateStartGate, refreshSetup, getCustomPrompt, openMenu: (toSupport) => openMenuFn && openMenuFn(toSupport), openSkills: () => openSkillsSettings() };
   })();
 
   // ── Live token + timer, shown ONLY on a tool call's chip detail. The
@@ -4503,6 +4513,15 @@
     }
     if (msg && msg.type === "zs-open-menu") {
       ui.openMenu(false); // from the popup's Settings button — opens at the top (Switch AI)
+    }
+    if (msg && msg.type === "zs-start") {
+      startSession();
+    }
+    if (msg && msg.type === "zs-stop") {
+      stopLoop();
+    }
+    if (msg && msg.type === "zs-open-skills") {
+      ui.openSkills();
     }
     if (msg && msg.type === "ZS_RUN_EXTERNAL_PROMPT") {
       runExternalPrompt(msg.id, msg.prompt);

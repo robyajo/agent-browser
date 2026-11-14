@@ -213,6 +213,20 @@ html.zs-light #zs-unstable {
   box-shadow: 0 2px 12px rgba(217, 119, 6, 0.45);
 }
 #zs-action[data-kind="start-degraded"]:hover { filter: brightness(1.08); }
+#zs-action[data-kind="stop"] {
+  background: #ff6b6b; color: #fff; border-color: rgba(255, 107, 107, 0.7);
+  box-shadow: 0 2px 12px rgba(255, 107, 107, 0.35);
+}
+#zs-action[data-kind="stop"]:hover { filter: brightness(1.08); }
+#zs-star-btn {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  height: 32px; width: 32px; padding: 0;
+  background: rgba(250, 204, 21, 0.08); color: #facc15;
+  border: 1px solid rgba(250, 204, 21, 0.6); border-radius: 16px;
+  font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap;
+  transition: background 0.14s ease, border-color 0.14s ease, transform 0.1s ease;
+}
+#zs-star-btn:hover { background: rgba(250, 204, 21, 0.22); border-color: #facc15; transform: scale(1.08); }
 #zs-action:disabled {
   background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.45);
   border-color: rgba(255, 255, 255, 0.10); box-shadow: none; cursor: not-allowed;
