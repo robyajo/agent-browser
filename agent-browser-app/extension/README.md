@@ -18,7 +18,7 @@ Just describe what you want in chat, and the agent reads workspace files, edits 
 1. Go to `chrome://extensions` or `edge://extensions`.
 2. Enable **Developer mode** (top-right toggle).
 3. Click **Load unpacked**.
-4. Select the `snapgent-extension` folder.
+4. Select the `agent-browser-extension` folder.
 
 ### 2. Start the Local Bridge
 - **Linux & macOS**: Run `./start_zed.sh` (or `Linux_Start.sh` / `MacOS_Start.command`).

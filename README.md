@@ -57,7 +57,7 @@ Describe what you want in plain language — the agent reads, creates, and edits
    - **Chrome / Brave**: `chrome://extensions`
    - **Edge**: `edge://extensions`
 3. Enable **Developer mode** (toggle in the top-right corner).
-4. Click **Load unpacked** and select the `snapgent-extension` folder.
+4. Click **Load unpacked** and select the `agent-browser-extension` folder.
 5. The **Agent Browser** icon will appear in your browser toolbar.
 
 ---
@@ -257,7 +257,7 @@ Add the `language_models` block:
 
 ```
 agent-browser/
-├── snapgent-extension/        # Browser extension (Chrome / Edge MV3)
+├── agent-browser-extension/   # Browser extension (Chrome / Edge MV3)
 │   ├── core/                  # Prompt engine, parser, agent loop, UI
 │   │   ├── config.js          # Dynamic prefixes (vscode/ vs zededitor/)
 │   │   ├── parser.js          # Command parsing

@@ -35,7 +35,7 @@ class McpServer {
     proc.stdout.on("data", (chunk) => this._onData(chunk));
     proc.stderr.on("data", (d) => this.log(`[${this.id}] stderr: ${String(d).trim().slice(0, 1000)}`));
     try {
-      await this.request("initialize", { protocolVersion: PROTOCOL, capabilities: {}, clientInfo: { name: "snapgent-app", version: VERSION } }, 12000);
+      await this.request("initialize", { protocolVersion: PROTOCOL, capabilities: {}, clientInfo: { name: "agent-browser-app", version: VERSION } }, 12000);
       this._write({ jsonrpc: "2.0", method: "notifications/initialized", params: {} });
       const r = await this.request("tools/list", {}, 20000);
       const raw = r && Array.isArray(r.tools) ? r.tools : [];

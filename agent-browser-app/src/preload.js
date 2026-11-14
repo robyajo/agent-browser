@@ -97,8 +97,8 @@ if (provider && isTop && location.protocol === "https:") {
     if (css) { try { webFrame.insertCSS(css); } catch {} }
     for (const rel of ["core/config.js", "core/parser.js", `providers/${provider}.js`, "core/main.js"]) {
       const code = read(rel);
-      if (!code) { console.error("[snapgent] missing", rel); return; }
-      try { await webFrame.executeJavaScript(code); } catch (e) { console.error("[snapgent] inject failed", rel, e); return; }
+      if (!code) { console.error("[agent-browser] missing", rel); return; }
+      try { await webFrame.executeJavaScript(code); } catch (e) { console.error("[agent-browser] inject failed", rel, e); return; }
     }
   }
   const run = () => setTimeout(inject, 300);

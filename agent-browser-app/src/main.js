@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Snapgent standalone app - main process.
+// Agent Browser standalone app - main process.
 // The bridge is built in: BridgeCore talks MCP over stdio to the app's own child
 // process (vscode_mcp.exe). No port, no WebSocket, nothing outside the app can connect.
 const { app, BrowserWindow, BrowserView, ipcMain, dialog, session } = require("electron");
@@ -19,7 +19,7 @@ let win = null;
 let view = null; // the AI site
 
 // ---------------------------------------------------------------- data dir
-const DATA_DIR = path.join(app.getPath("userData"), "snapgent-data");
+const DATA_DIR = path.join(app.getPath("userData"), "agent-browser-data");
 fs.mkdirSync(DATA_DIR, { recursive: true });
 const STORE_FILE = path.join(DATA_DIR, "storage.json");
 const HISTORY_FILE = path.join(DATA_DIR, "history.json");
@@ -54,7 +54,7 @@ function logLine(m) {
   try { fs.appendFileSync(path.join(DATA_DIR, "app.log"), new Date().toISOString() + " " + m + "\n"); } catch {}
 }
 
-// Crash diagnostics: everything below is written to snapgent-data/app.log
+// Crash diagnostics: everything below is written to agent-browser-data/app.log
 process.on("uncaughtException", (e) => logLine("uncaughtException: " + ((e && e.stack) || e)));
 process.on("unhandledRejection", (e) => logLine("unhandledRejection: " + ((e && e.stack) || e)));
 app.on("render-process-gone", (_e, wc, d) => logLine("render-process-gone: " + JSON.stringify(d) + " url=" + (wc && !wc.isDestroyed() ? wc.getURL() : "?")));
@@ -170,7 +170,7 @@ function layout() {
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 1280, height: 860, title: "Snapgent",
+    width: 1280, height: 860, title: "Agent Browser",
     webPreferences: { preload: path.join(__dirname, "toolbar-preload.js"), contextIsolation: true, nodeIntegration: false, backgroundThrottling: false },
   });
   win.loadFile(path.join(__dirname, "toolbar.html"));
@@ -182,7 +182,7 @@ function createWindow() {
       nodeIntegration: false,
       sandbox: false,
       backgroundThrottling: false,
-      partition: "persist:snapgent", // dedicated profile: logins stay inside the app
+      partition: "persist:agent-browser", // dedicated profile: logins stay inside the app
     },
   });
   win.setBrowserView(view);
@@ -206,7 +206,7 @@ function createWindow() {
         action: "allow",
         overrideBrowserWindowOptions: {
           width: 500, height: 680, parent: win, title: "Sign in",
-          webPreferences: { partition: "persist:snapgent", contextIsolation: true, nodeIntegration: false },
+          webPreferences: { partition: "persist:agent-browser", contextIsolation: true, nodeIntegration: false },
         },
       };
     }
@@ -215,9 +215,9 @@ function createWindow() {
   });
 
   // Google refuses sign-in from embedded browsers that announce "Electron" in the user agent.
-  const ua = view.webContents.getUserAgent().replace(/\sElectron\/\S+/, "").replace(/\ssnapgent-app\/\S+/, "");
+  const ua = view.webContents.getUserAgent().replace(/\sElectron\/\S+/, "").replace(/\sagent-browser-app\/\S+/, "");
   view.webContents.setUserAgent(ua);
-  session.fromPartition("persist:snapgent").setUserAgent(ua);
+  session.fromPartition("persist:agent-browser").setUserAgent(ua);
 
   let startUrl = START_URL;
   try {
