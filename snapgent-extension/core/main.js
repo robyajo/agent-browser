@@ -973,7 +973,12 @@
 
   function activeTools() {
     if (!isMcpEnabled(selectedTargetId)) return [];
-    return A.toolList.filter((tool) => (tool.server || "roblox") === selectedTargetId);
+    const target = (selectedTargetId === "zed" ? "zededitor" : selectedTargetId) || "vscode";
+    return A.toolList.filter((tool) => {
+      const s = tool.server || "vscode";
+      if (target === "zededitor") return s === "zededitor" || s === "zed";
+      return s === target;
+    });
   }
 
   function refreshActiveToolNames() {
@@ -1041,64 +1046,39 @@
     // merged tool count - a dead server must not borrow another's numbers).
     if (name === "list_mcp_servers") {
       await ensureTools();
-      // Isolation: the AI only ever sees the server selected in the dropdown (and only
-      // if its toggle is on). Other servers, enabled or not, are invisible to it.
+      const target = (selectedTargetId === "zed" ? "zededitor" : selectedTargetId) || "vscode";
       const servers = ((A.bridge && A.bridge.servers) || [])
-        .filter((sv) => sv.id === selectedTargetId && isMcpEnabled(sv.id));
+        .filter((sv) => {
+          const sid = sv.id === "zed" ? "zededitor" : sv.id;
+          return sid === target && isMcpEnabled(sv.id);
+        });
       const lines = servers.length
         ? servers.map((sv) => {
-            const label = sv.id === "vscode"
-              ? "VS Code (default target)"
-              : sv.id === "roblox" ? "Roblox Studio" : `${sv.id} (addon)`;
+            const label = sv.id === "vscode" ? "VS Code" : "Zed Editor";
             return `- ${sv.id}: ${label} - ${sv.alive ? `${sv.tools || 0} commands available` : "offline (no tools)"}`;
           })
-        : ["- vscode: VS Code (default target) - unknown (bridge did not report server health)"];
+        : [`- ${target}: ${ui.getTargetName()} - unknown`];
       return (
         `Output of 'list_mcp_servers':\n` +
         `Connected MCP servers (${lines.length}):\n${lines.join("\n")}\n` +
-        `Use list_commands with a "server" param (one of the ids above) to see that server's exact commands. Without "server", list_commands defaults to "${selectedTargetId}".`
+        `Use list_commands to see the available commands. Selected target is "${target}".`
       );
     }
-    // Virtual command: list available commands with full details. Defaults to
-    // the primary Roblox server - a DIFFERENT server's tools only ever show up
-    // if the model explicitly asks via {"server": "<id>"} (see list_mcp_servers).
+    // Virtual command: list available commands with full details.
     if (name === "list_commands" || name === "list_tools") {
       await ensureTools();
-      const target = (selectedTargetId || "vscode").trim();
+      const target = (selectedTargetId === "zed" ? "zededitor" : selectedTargetId) || "vscode";
       const asked = typeof args.server === "string" ? args.server.trim() : "";
-      // Isolation: only the server selected in the dropdown can be listed. A request
-      // for any other server gets a generic refusal that does not reveal whether that
-      // server exists, is connected, or is toggled on.
-      if (asked && asked !== target) {
+      const isTargetMatch = !asked || asked === target ||
+        ((target === "zededitor" || target === "zed") && (asked === "zededitor" || asked === "zed"));
+      if (!isTargetMatch) {
         return `Output of '${name}':\nERROR: server "${asked}" is not available. Only the selected target "${target}" can be used in this session. Do NOT try other servers; ask the user to switch the target in the snapgentV3 selector if needed.`;
       }
       const requested = target;
       if (!isMcpEnabled(requested)) {
         return `Output of '${name}':\nERROR: MCP server "${requested}" is disabled by the user. Do NOT use it. Tell the user to enable it in the MCP settings if it is needed.`;
       }
-      // The MCP proxy keeps advertising Roblox's catalogue even with no Studio
-      // attached, so list_commands would hand back the full command list and read
-      // as "Roblox is fine" - then every command silently fails. When Roblox is
-      // actually unusable, short-circuit the DEFAULT (roblox) listing into a plain
-      // "Roblox is down" note that points the model at the other server(s), so it
-      // can keep working in degraded mode instead of firing dead Roblox commands.
-      if (requested === "roblox") {
-        const s = A.bridge || {};
-        const srv = s.servers || [];
-        const rbx = srv.find((x) => x.id === "roblox");
-        const rbxAlive = rbx ? !!rbx.alive : (!!s.mcpAlive || srv.some((x) => x.alive));
-        const rbxUsable = !!s.connected && rbxAlive && s.studio !== false;
-        if (!rbxUsable) {
-          // Isolation: never reveal other servers here.
-          const otherStr = "Do NOT try other servers; wait for the user to fix the target or switch it in the snapgentV3 selector.";
-          return `Output of '${name}':\nRoblox Studio is currently OFFLINE (closed, no place open, or its MCP server disabled), so its commands cannot run. This is an environment problem on the user's machine, not your mistake. Tell the user in one short sentence to open their place in Roblox Studio and enable its MCP server. ${otherStr}`;
-        }
-      }
-      const known = new Set(A.toolList.map((t) => t.server).filter(Boolean));
-      // Tools from a bridge that doesn't tag "server" yet (old version) have no
-      // .server field at all - treat those as the primary server rather than
-      // hiding everything.
-      const scoped = A.toolList.filter((t) => (t.server || "roblox") === requested);
+      const scoped = activeTools();
       if (!A.toolList.length) return `Output of '${name}':\nNo commands available - the bridge or selected MCP server may be offline.`;
       if (!scoped.length) {
         return `Output of '${name}':\nERROR: the selected server "${requested}" has no commands available (it may be offline). Do NOT try other servers; tell the user to check the target in the snapgentV3 selector.`;
@@ -1150,33 +1130,26 @@
     if (!isMcpEnabled(selectedTargetId)) {
       return `ERROR: the selected MCP server "${selectedTargetId}" is disabled by the user, so '${name}' was not run. Do NOT retry. Tell the user to enable it in the MCP settings.`;
     }
-    if (name.includes("/") && name.split("/")[0] !== selectedTargetId) {
-      return `ERROR: '${name}' was not run. Only the selected target "${selectedTargetId}" can be used in this session. Use plain command names from list_commands.`;
+    if (name.includes("/")) {
+      const serverPrefix = name.split("/")[0];
+      const targetMatches =
+        serverPrefix === selectedTargetId ||
+        ((selectedTargetId === "zededitor" || selectedTargetId === "zed") &&
+          (serverPrefix === "zededitor" || serverPrefix === "zed"));
+      if (!targetMatches) {
+        return `ERROR: '${name}' was not run. Only the selected target "${selectedTargetId}" can be used in this session.`;
+      }
     }
     if (!A.toolNames.size) await ensureTools();
     if (!knownTool(name)) {
       return ZS.FEEDBACK.unknownTool(name, [...A.toolNames]);
     }
-    // The Roblox MCP REQUIRES datamodel_type on execute_luau (enum Edit/Client/
-    // Server). The ###LUA### parser already fills it in, but the model may also
-    // write the JSON form without it - default to "Edit" so the call never
-    // soft-fails with "datamodel_type is required".
-    if (bareName === "execute_luau" && !args.datamodel_type) args.datamodel_type = "Edit";
-    // The player-input tools only run against the Client datamodel (play mode) and
-    // "Client" is the sole allowed value, so default it when the model omits it -
-    // it can only be right. (It still needs the game RUNNING; that's documented.)
-    if ((bareName === "user_keyboard_input" || bareName === "user_mouse_input") && !args.datamodel_type)
-      args.datamodel_type = "Client";
-    const timeout = name === "execute_luau" ? 20000 : 120000;
+    const timeout = 120000;
     // Hard watchdog: even if the background worker never answers, the loop
     // gets a definitive result and continues.
     const hardCap = new Promise((res) =>
       setTimeout(() => res({ ok: false, kind: "timeout", error: "no response from the extension worker" }), timeout + 30000));
-    // Stop watcher: a blocking tool (e.g. wait_job_finished) would otherwise keep
-    // the loop awaiting the bridge for up to minutes, leaving the input locked and
-    // the Stop button stuck. When the user halts (A.stop), abandon the wait within
-    // ~150ms so the loop breaks and its finally unlocks everything. The in-flight
-    // bridge call may still finish in the background; its result is just ignored.
+    // Stop watcher: a blocking tool would otherwise keep the loop awaiting the bridge.
     let stopTimer;
     const stopWatch = new Promise((res) => {
       stopTimer = setInterval(() => { if (A.stop) res({ ok: false, kind: "stopped" }); }, 150);
@@ -1185,32 +1158,6 @@
     clearInterval(stopTimer);
     if (r && r.kind === "stopped") return "(stopped by user)";
     if (!r) return ZS.FEEDBACK.bridgeOffline;
-    // The MCP server answers SUCCESSFULLY (ok:true) when no Studio is attached
-    // (Studio closed / no place / MCP option disabled) - with an explanatory
-    // text instead of a result. Surface it as a proper environment ERROR so the
-    // model stops and tells the user, instead of treating it as tool output.
-    if (r.ok && selectedTargetId === "roblox" && /Unable to find an active Studio instance|previously active Studio has disconnected/i.test(r.text || "")) {
-      ui.banner("warn", "Studio offline",
-        "Open a place, enable MCP.");
-      return ZS.FEEDBACK.studioOffline;
-    }
-    // The Roblox MCP reports missing/invalid required parameters as a SUCCESS
-    // whose text is just the complaint (e.g. "datamodel_type is required").
-    // Re-shape those into a real ERROR so the model corrects the call instead
-    // of misreading it as tool output.
-    if (r.ok && r.text && /^[\w .'"-]{0,60}\bis (required|not available|invalid)\b[\w .'"-]{0,80}$/i.test(r.text.trim())) {
-      return `ERROR calling '${name}': ${r.text.trim()}.\nA required or invalid parameter - check the command's parameters with list_commands, fix the call and retry.`;
-    }
-    // The Roblox MCP also reports Luau PARSE/RUNTIME errors as a SUCCESS whose
-    // text is the executor's own stack trace ("…ExecuteLuauTool:139: …
-    // CommandExecution:54: <real error>" - validated live). Genuine script
-    // output never contains those internal paths. Re-shape into a real ERROR so
-    // the model gets the fix-it hints below and the chip settles red, not ✓
-    // green - and strip the internal frames so only the useful part remains.
-    if (r.ok && bareName === "execute_luau" && r.text &&
-        /\b(?:ExecuteLuauTool|CommandExecution):\d+:/.test(r.text)) {
-      r = { ok: false, error: r.text.replace(/^(?:\S*(?:ExecuteLuauTool|CommandExecution):\d+:\s*)+/, "").trim() || r.text };
-    }
     if (r.ok) {
       if (r.images && r.images.length && !P.supportsVision) {
         // Any tool from ANY connected server can turn out to return images -
@@ -1314,8 +1261,7 @@
   const feedbackIsError = (feedback) => feedback.startsWith("ERROR") || bodyLooksFailed(feedback);
 
   // Some tools answer with raw JSON on one line, and a 44-char slice of it makes
-  // a chip that says nothing: list_roblox_studios read
-  // `{"studios":[{"id":"8521cfad-f8d9-46f4-8cbe-2`. Summarise the SHAPE instead,
+  // a chip that says nothing (e.g. raw JSON array/object preview). Summarise the SHAPE instead,
   // in the same spirit as the boot chip's "25 commands". Returns null when the
   // body isn't JSON, so plain-text outputs keep their first line unchanged.
   function jsonSummary(body) {
@@ -1627,14 +1573,7 @@
             A.toolCallsSinceReminder++;
             if (A.toolCallsSinceReminder >= REMIND_TOOLS_EVERY) {
               A.toolCallsSinceReminder = 0;
-              // Scope the reminder to the primary Roblox server, exactly like
-              // list_commands: re-injecting EVERY connected server's tools (Blender
-              // etc.) merged flat would bloat the model's context - the opposite of
-              // what the model gets when it lists commands itself. Anti-drift only
-              // needs the primary Roblox set; addon commands were listed on demand
-              // and the bridge routes by name regardless.
               toSend += ZS.toolsReminder(activeTools(), ui.getTargetName(), selectedTargetId);
-              if (selectedTargetId === "roblox") toSend += "\n" + ZS.memoryNudge();
               diag("tools.reminder", { after: REMIND_TOOLS_EVERY });
             }
           }
@@ -2138,37 +2077,25 @@
                                // covers the list_commands / list_mcp_servers calls
                                // the model makes seconds later)
       if (!alive()) return;
-      const selectedTools = activeTools();
-      const vscodeServer = (A.bridge && A.bridge.servers || []).find((server) => server.id === "vscode");
-      if (selectedTargetId === "vscode" && A.bridge && A.bridge.connected &&
-          vscodeServer && vscodeServer.alive &&
-          !selectedTools.some((tool) => bareToolName(tool.name) === "list_dir")) {
-        ui.banner("warn", "VS Code workspace required",
-          "Open a project folder in VS Code, then try again.");
-        return;
-      }
+      const targetLabel = ui.getTargetName();
       if (!activeTools().length) {
-        ui.banner("warn", `${ui.getTargetName()} tools unavailable`,
+        ui.banner("warn", `${targetLabel} tools unavailable`,
           `Is the server online?`);
         return;
       }
-      if (selectedTargetId === "vscode") {
-        const workspaceTool = activeTools().find((tool) => bareToolName(tool.name) === "list_dir");
-        if (!workspaceTool) {
-          ui.banner("warn", "VS Code workspace required",
-            "Open a project folder in VS Code, then try again.");
-          return;
-        }
+      const workspaceTool = activeTools().find((tool) => bareToolName(tool.name) === "list_dir");
+      if (workspaceTool) {
         const probe = await bg({
           type: "call_tool",
           name: workspaceTool.name,
           arguments: { path: "." },
           timeout: 5000,
+          server: selectedTargetId,
         });
         if (!alive()) return;
         if (!probe || !probe.ok) {
-          ui.banner("warn", "VS Code workspace required",
-            "Open a project folder in VS Code, then try again.");
+          ui.banner("warn", `${targetLabel} workspace required`,
+            `Open a project folder in ${targetLabel}, then try again.`);
           return;
         }
       }
@@ -2179,7 +2106,7 @@
           `Try a new chat or reload.`);
         return;
       }
-      if (selectedTargetId === "vscode") await loadWorkspaceSkills();
+      await loadWorkspaceSkills();
       if (!alive()) return;
       const prompt = systemPrompt();
       const base = await submitAndGetBase(prompt);
@@ -2269,7 +2196,9 @@
   const SVG = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
   const ICONS = {
     screen:  SVG('<rect x="3" y="4" width="18" height="13" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>'),
-    roblox:  SVG('<path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/>'),
+    vscode:  SVG('<path d="M16.5 2.5 7.5 9.5 2 6l-1 1.5 5 4.5-5 4.5 1 1.5 5.5-3.5 9 7 4.5-2V4.5z"/>'),
+    zededitor: SVG('<path d="M4 6h16L8 18h12"/>'),
+    zed:     SVG('<path d="M4 6h16L8 18h12"/>'),
     read:    SVG('<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>'),
     edit:    SVG('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>'),
     generate: SVG('<path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/>'),
@@ -2925,7 +2854,7 @@
           <div class="zs-target-wrap" title="Choose which MCP server receives commands">
             <select id="zs-target" aria-label="MCP target" hidden tabindex="-1">
               <option value="vscode">VS Code</option>
-              <option value="roblox">Roblox Studio</option>
+              <option value="zededitor">Zed Editor</option>
             </select>
             <button id="zs-target-btn" type="button" aria-haspopup="listbox" aria-label="Choose MCP target"><span id="zs-target-name"></span></button>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
@@ -3076,7 +3005,7 @@
     // addon servers actually exist. Self-heal the local display-name cache when
     // a configured server isn't already known.
     function mergedMcpServers() {
-      const live = ((A.bridge && A.bridge.servers) || []).filter((sv) => sv.id !== "roblox");
+      const live = (A.bridge && A.bridge.servers) || [];
       const byId = new Map(customMcpServers.map((s) => [s.id, s]));
       const merged = live.map((sv) => {
         const cached = byId.get(sv.id);
@@ -3085,55 +3014,45 @@
           alive: sv.alive, tools: sv.tools,
         };
       });
-      // Self-heal: cache didn't know about a server the bridge actually has.
-      let healed = false;
-      for (const sv of live) {
-        if (!byId.has(sv.id)) { customMcpServers.push({ id: sv.id, name: sv.id }); healed = true; }
-      }
-      if (healed) saveCustomMcpServers();
-      // A server we just added/removed but the bridge hasn't reported back on
-      // yet (mid-restart) - still show it, health unknown, so it doesn't blink
-      // out of the list during the few seconds the bridge is restarting.
-      for (const s of customMcpServers) {
-        if (!merged.some((m) => m.id === s.id)) merged.push({ ...s, alive: undefined, tools: undefined });
-      }
       return merged;
     }
 
     function getTargetName(id = selectedTargetId) {
-      if (id === "roblox") return "Roblox Studio";
       if (id === "vscode") return "VS Code";
-      if (id === "effectcraft") return "EffectCraft";
-      const server = mergedMcpServers().find((item) => item.id === id);
-      return server ? server.name : id;
+      if (id === "zededitor" || id === "zed") return "Zed Editor";
+      return id === "zededitor" ? "Zed Editor" : "VS Code";
     }
     const targetNameHtml = () =>
       getTargetName().replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
 
     function setTarget(id = selectedTargetId) {
       if (!targetSelect) return;
+      if (id !== "vscode" && id !== "zededitor") {
+        id = (id === "zed") ? "zededitor" : "vscode";
+        selectedTargetId = id;
+      }
       const options = [
         { id: "vscode", name: "VS Code" },
-        { id: "roblox", name: "Roblox Studio" },
-        { id: "effectcraft", name: "EffectCraft" },
-        ...mergedMcpServers()
-          .filter((server) => !["vscode", "roblox", "effectcraft"].includes(server.id))
-          .map((server) => ({ id: server.id, name: getTargetName(server.id) })),
+        { id: "zededitor", name: "Zed Editor" },
       ].filter((option) => isMcpEnabled(option.id));
+      if (!options.length) {
+        options.push({ id: "vscode", name: "VS Code" });
+      }
       if (!options.some((option) => option.id === id)) {
-        options.push({ id, name: id });
+        id = options[0].id;
+        selectedTargetId = id;
       }
       const optionsKey = options.map((option) => `${option.id}:${option.name}`).join("|");
       if (targetSelect.dataset.optionsKey !== optionsKey) {
-          targetSelect.innerHTML = options
-            .map((option) => `<option value="${option.id.replace(/&/g, "&amp;").replace(/"/g, "&quot;")}">${option.name.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]))}</option>`)
-            .join("");
+        targetSelect.innerHTML = options
+          .map((option) => `<option value="${option.id}">${option.name}</option>`)
+          .join("");
         targetSelect.dataset.optionsKey = optionsKey;
       }
       targetSelect.value = id;
       targetSelect.disabled = false; // never locked: the user may switch MCP target at any time
       const nameEl = root && root.querySelector("#zs-target-name");
-      if (nameEl) nameEl.textContent = (options.find((option) => option.id === id) || { name: id }).name;
+      if (nameEl) nameEl.textContent = getTargetName(id);
       if (targetMenuEl && !targetMenuEl.hidden) renderTargetMenu();
     }
 
@@ -3186,15 +3105,10 @@
     // One popover holding every secondary control. Opens above the bar.
     // ── MCP settings popup (toggle which servers are enabled) ───────────────
     function allMcpOptions() {
-      const base = [
+      return [
         { id: "vscode", name: "VS Code" },
-        { id: "roblox", name: "Roblox Studio" },
-        { id: "effectcraft", name: "EffectCraft" },
+        { id: "zededitor", name: "Zed Editor" },
       ];
-      const extra = mergedMcpServers()
-        .filter((s) => !base.some((b) => b.id === s.id))
-        .map((s) => ({ id: s.id, name: getTargetName(s.id) }));
-      return [...base, ...extra];
     }
 
     function openMcpSettings() {
@@ -3214,7 +3128,10 @@
           `<div class="zs-mcp-pop-head"><span>MCP servers</span><button class="zs-mcp-pop-close" aria-label="Close">&#10005;</button></div>` +
           `<div class="zs-mcp-pop-note">Only enabled servers appear in the dropdown and are read by the AI. Disabled servers cost no tokens.</div>` +
           `<div class="zs-mcp-pop-list">${rows}</div>` +
-          `<div class="zs-mcp-pop-head" style="border-top:1px solid rgba(128,128,128,.25);margin-top:4px"><span>Sessions</span></div>` +
+          `<div style="margin-top:8px;padding:8px;background:rgba(124,140,255,0.08);border:1px solid rgba(124,140,255,0.25);border-radius:6px;font-size:11.5px;">` +
+            `<button id="zs-mcp-zed-guide" type="button" style="background:none;border:none;color:#9bb5ff;cursor:pointer;font-weight:600;padding:0;text-decoration:underline;">Lihat Panduan Konfigurasi Zed Editor &rarr;</button>` +
+          `</div>` +
+          `<div class="zs-mcp-pop-head" style="border-top:1px solid rgba(128,128,128,.25);margin-top:8px"><span>Sessions</span></div>` +
           `<label class="zs-mcp-row" title="Let a hidden tab keep its session running instead of parking it"><span class="zs-mcp-row-info"><span class="zs-mcp-row-name">Background sessions</span><span class="zs-mcp-row-meta">Keep working while this tab is in the background</span></span><input type="checkbox" id="zs-bg-sessions" ${backgroundSessions ? "checked" : ""}><span class="zs-mcp-toggle"></span></label>` +
           `<div class="zs-mcp-pop-note">Off by default: a hidden tab has no layout, so reads right after it is shown again can be stale. Turn this on only when you run several chats at once.</div>` +
         `</div>`;
@@ -3237,6 +3154,11 @@
       };
       pop.addEventListener("click", (e) => { if (e.target === pop) close(); });
       pop.querySelector(".zs-mcp-pop-close").addEventListener("click", close);
+      const zedGuideLink = pop.querySelector("#zs-mcp-zed-guide");
+      if (zedGuideLink) zedGuideLink.addEventListener("click", () => {
+        close();
+        openZedHelpModal();
+      });
       const bgBox = pop.querySelector("#zs-bg-sessions");
       if (bgBox) bgBox.addEventListener("change", () => setBackgroundSessions(bgBox.checked));
       pop.querySelectorAll(".zs-mcp-check").forEach((box) =>
@@ -3246,6 +3168,50 @@
           // without waiting for the popup to close.
           setTarget(selectedTargetId);
         }));
+    }
+
+    function openZedHelpModal() {
+      const old = document.getElementById("zs-zed-pop");
+      if (old) old.remove();
+      const pop = document.createElement("div");
+      pop.id = "zs-zed-pop";
+      pop.innerHTML =
+        `<div class="zs-mcp-pop-card" style="max-width:460px;width:92vw;" role="dialog" aria-label="Panduan Konfigurasi Zed Editor">` +
+          `<div class="zs-mcp-pop-head">` +
+            `<span style="font-weight:700;display:flex;align-items:center;gap:6px">` +
+              `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16L8 18h12"/></svg>` +
+              `Konfigurasi Zed Editor` +
+            `</span>` +
+            `<button class="zs-mcp-pop-close" aria-label="Close">&#10005;</button>` +
+          `</div>` +
+          `<div class="zs-mcp-pop-note" style="line-height:1.6;font-size:12px;color:inherit;opacity:0.95;">` +
+            `<p style="margin:0 0 8px;"><b>1. Jalankan Connector:</b><br>` +
+            `Buka terminal di folder connector dan jalankan:<br>` +
+            `<code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;display:inline-block;margin-top:2px;">./start_zed.sh</code></p>` +
+            `<p style="margin:8px 0;"><b>2. Pengaturan di Zed Editor:</b><br>` +
+            `Buka <code>~/.config/zed/settings.json</code> di Zed, lalu pastikan konfigurasi OpenAI mengarah ke bridge:</p>` +
+            `<pre style="background:rgba(0,0,0,0.4);padding:8px;border-radius:6px;font-size:11px;overflow-x:auto;user-select:all;margin:4px 0;">` +
+`"language_models": {\n` +
+`  "openai": {\n` +
+`    "api_url": "http://127.0.0.1:17614/v1",\n` +
+`    "available_models": [\n` +
+`      { "name": "deepseek-web", "display_name": "Snapgent DeepSeek (Web Free)", "max_tokens": 16384 },\n` +
+`      { "name": "qwen-web", "display_name": "Snapgent Qwen (Web Free)", "max_tokens": 16384 }\n` +
+`    ]\n` +
+`  }\n` +
+`}` +
+            `</pre>` +
+            `<p style="margin:8px 0;"><b>3. Buka Workspace:</b><br>` +
+            `Buka folder proyek Anda di Zed Editor. Bridge akan otomatis membaca folder workspace aktif.</p>` +
+            `<p style="margin:8px 0 0;"><b>4. Perintah di Chat / Agent:</b><br>` +
+            `Ketika target <b>Zed Editor</b> dipilih, instruksi tool otomatis menggunakan prefix <code>zededitor/...</code> (misal: <code>zededitor/read_file</code>).</p>` +
+          `</div>` +
+          `<button class="zs-mcp-pop-close-btn" style="margin-top:12px;width:100%;padding:8px;background:rgba(255,255,255,0.12);border:none;border-radius:6px;color:#fff;cursor:pointer;font-weight:600;">Tutup</button>` +
+        `</div>`;
+      document.documentElement.appendChild(pop);
+      const close = () => pop.remove();
+      pop.querySelectorAll(".zs-mcp-pop-close, .zs-mcp-pop-close-btn").forEach((b) => b.addEventListener("click", close));
+      pop.addEventListener("click", (e) => { if (e.target === pop) close(); });
     }
 
     // ── Skills settings popup (toggle which workspace skills are listed) ────
@@ -3365,12 +3331,14 @@
       menuEl.innerHTML =
         `<div class="zs-menu-head"><span class="zs-menu-logo">snapgentV3</span></div>
          <section class="zs-menu-sec">
-           <div class="zs-sec-label zs-sec-label-row"><span>Switch AI</span><span><button id="zs-skills-settings" class="zs-gear" title="Skills" aria-label="Skills">&#9733;</button><button id="zs-mcp-settings" class="zs-gear" title="MCP settings" aria-label="MCP settings">&#9881;</button></span></div>
+           <div class="zs-sec-label zs-sec-label-row"><span>Switch AI</span><span><button id="zs-zed-help" class="zs-gear" title="Zed Editor Setup Guide" aria-label="Zed Setup">&#9432;</button><button id="zs-skills-settings" class="zs-gear" title="Skills" aria-label="Skills">&#9733;</button><button id="zs-mcp-settings" class="zs-gear" title="MCP settings" aria-label="MCP settings">&#9881;</button></span></div>
            <div class="zs-site-grid">${sites}</div>
          </section>`;
       const open = (url) => { try { window.open(url, "_blank", "noopener"); } catch {} menuEl.hidden = true; };
       menuEl.querySelectorAll("button.zs-site-opt, .zs-tip-opt").forEach((b) =>
         b.addEventListener("click", () => open(b.dataset.u)));
+      const zedHelpBtn = menuEl.querySelector("#zs-zed-help");
+      if (zedHelpBtn) zedHelpBtn.addEventListener("click", (e) => { e.stopPropagation(); menuEl.hidden = true; openZedHelpModal(); });
       const gear = menuEl.querySelector("#zs-mcp-settings");
       if (gear) gear.addEventListener("click", (e) => { e.stopPropagation(); menuEl.hidden = true; openMcpSettings(); });
       const starBtn = menuEl.querySelector("#zs-skills-settings");
@@ -3482,12 +3450,14 @@
         indicator = `<span class="zs-spin"></span>`;
         msg = `Starting…`;
         label = "Starting…"; kind = "starting"; disabled = true;
-      } else if (A.started && selectedTargetId !== "roblox") {
-        const server = (A.bridge.servers || []).find((item) => item.id === selectedTargetId);
-        const tools = activeTools().length || (server && server.tools) || 0;
+      } else if (A.started) {
+        const selectedServer = (A.bridge.servers || []).find((item) =>
+          item.id === selectedTargetId || (selectedTargetId === "zededitor" && item.id === "zed")
+        );
+        const tools = activeTools().length || (selectedServer && selectedServer.tools) || 0;
         if (!A.bridge.connected) {
           toneClass = "warn"; warn = true;
-          msg = `<b>Active</b> · run start.bat`;
+          msg = `<b>Active</b> · run ./start_zed.sh or start.bat`;
         } else if (!bridgeOk) {
           toneClass = "warn"; warn = true;
           msg = `<b>Active</b> · ${targetNameHtml()} offline`;
@@ -3495,108 +3465,30 @@
           toneClass = "active";
           msg = `<b>Active</b>${tools ? ` · ${tools} tools` : ""} · ${targetNameHtml()}`;
         }
-      } else if (A.started) {
-        // Prefer the ADVERTISED list length (A.toolList - the AGGREGATE catalogue
-        // across every connected MCP server, already filtered by the vision/blocked
-        // gate so it matches what the model actually has: e.g. screen_capture is
-        // absent on non-vision providers like Kimi). After a page reload A.toolList
-        // is empty until the next list_tools, so fall back to the sum of every
-        // server's per-server health count (Roblox + addons like Blender) - NOT the
-        // Roblox-only count, which made the total drop to just 27 after a reload.
-        const selectedServer = A.bridge &&
-          (A.bridge.servers || []).find((item) => item.id === selectedTargetId);
-        const tools = activeTools().length ||
-          (selectedServer && selectedServer.tools) ||
-          (selectedTargetId === "roblox" && A.bridge && A.bridge.tools) || 0;
-        // "N tools" only means StudioMCP itself is up - it advertises its full
-        // catalogue even with no Studio/place attached (see probe_studio() in
-        // bridge.py), so showing it while Studio/place isn't actually usable
-        // reads as "everything's fine" when tool calls will just fail. Surface
-        // the real blocker instead in that case.
-        if (A.bridge && A.bridge.connected === false) {
-          // placeDown/appDown/studioDown are all false in this case (they're
-          // only computed when the bridge IS connected - see setStatus), so
-          // without this check the bridge dropping fell through to the
-          // stale "N tools" text below, reading as if nothing was wrong.
-          toneClass = "warn"; warn = true;
-          msg = `<b>Active</b> · run start.bat`;
-        } else if ((placeDown || appDown || studioDown) && addonOk) {
-          // DEGRADED session by CHOICE: the user started the agent with Roblox
-          // down but other MCP server(s) alive (the "Start agent (Roblox
-          // offline)" path) - they may only want the addon tools (e.g. Blender).
-          // Keep the warning tone as the honest health signal, but do NOT keep the
-          // red imperative "open Roblox Studio" nag on screen for the whole
-          // session (warn=false → no zs-state-warn red text). The full nag
-          // still shows when NO server is usable (the branches below).
-          toneClass = "warn";
-          msg = `<b>Active</b>${tools ? ` · ${tools} tools` : ""} · Roblox offline`;
-        } else if (placeDown) {
-          toneClass = "warn"; warn = true;
-          msg = `<b>Active</b> · open a place in Studio`;
-        } else if (appDown || studioDown) {
-          toneClass = "warn"; warn = true;
-          msg = studioProcUp
-            ? `<b>Active</b> · Studio not connected`
-            : `<b>Active</b> · open Studio`;
-        } else {
-          toneClass = "active";
-          // The green "Agent active" text is the live status signal.
-          msg = `<b>Active</b>${tools ? ` · ${tools} tools` : ""}`;
-        }
       } else if (P.isFreshChat() || P.chatIsEmpty()) {
-        // Treat ANY empty chat (no turns yet) as the standby/start case - not just
-        // the strict fresh-chat match. isFreshChat() also requires an exact root
-        // path AND the editor already mounted; on a cold load (e.g. arriving from a
-        // search-engine link) the SPA can show pathname/editor before they settle,
-        // which used to drop into the discouraging "No agent here" branch on a page
-        // that is actually empty and startable. "No agent here" is only correct for
-        // an EXISTING conversation (one that has turns) we did not start.
-        const selectedServer = (A.bridge.servers || []).find((item) => item.id === selectedTargetId);
-        const vscodeWorkspaceMissing = selectedTargetId === "vscode" &&
-          !!A.bridge.connected && !!selectedServer && !!selectedServer.alive &&
-          !(selectedServer.tools > 0);
-        if (selectedTargetId !== "roblox" &&
-            (!bridgeOk || (selectedTargetId === "vscode" && !workspaceReady))) {
+        const selectedServer = (A.bridge.servers || []).find((item) =>
+          item.id === selectedTargetId || (selectedTargetId === "zededitor" && item.id === "zed")
+        );
+        const serverConnected = !!A.bridge.connected && !!selectedServer && !!selectedServer.alive;
+        if (!A.bridge.connected) {
           toneClass = "warn"; warn = true;
-          msg = !A.bridge.connected
-            ? `Run <b>start.bat</b>`
-            : selectedTargetId === "vscode" && (bridgeOk || vscodeWorkspaceMissing)
-              ? workspaceProbePending
-                ? `Checking <b>VS Code workspace</b>…`
-                : `Open a <b>folder in VS Code</b>`
-              : `<b>${targetNameHtml()} unavailable</b>`;
+          msg = `Run <b>./start_zed.sh</b>`;
           label = `▶︎ Start`; kind = "start"; disabled = true;
-        } else if (bridgeOk && (selectedTargetId !== "vscode" || workspaceReady)) {
-          toneClass = "standby";
-          msg = `Ready.`;
-          label = `▶︎ Start`; kind = "start";
-        } else if (addonOk) {
-          // Roblox is down but another MCP server is live: allow a DEGRADED start
-          // (yellow). The agent runs on the other server(s); Roblox tools stay
-          // unavailable until Studio is back. Button enabled, but visibly warned.
+        } else if (!serverConnected) {
           toneClass = "warn"; warn = true;
-          msg = !A.bridge.connected
-            ? `Run <b>start.bat</b>`
-            : studioProcUp
-              ? `<b>Studio not connected</b>`
-              : `<b>Studio offline</b>`;
-          label = "▶︎ Start (offline)"; kind = "start-degraded";
+          msg = `<b>${targetNameHtml()} offline</b>`;
+          label = `▶︎ Start`; kind = "start"; disabled = true;
+        } else if (!workspaceReady) {
+          toneClass = "warn"; warn = true;
+          msg = workspaceProbePending
+            ? `Checking <b>${targetNameHtml()} workspace</b>…`
+            : `Open a <b>project folder in ${targetNameHtml()}</b>`;
+          label = `▶︎ Start`; kind = "start"; disabled = true;
         } else {
-          toneClass = "warn"; warn = true;
-          msg = !A.bridge.connected
-            ? `Run <b>start.bat</b>`
-            : placeDown
-              ? `Open a <b>place</b> in Studio`
-              : (appDown || studioDown) && studioProcUp
-                ? `Studio not connected`
-                : appDown
-                  ? `Open <b>Studio</b>`
-                  : studioDown
-                    ? `Open <b>Studio</b>`
-                    : `Open <b>Studio</b>`;
+          toneClass = "standby";
+          msg = `Ready (${targetNameHtml()}).`;
           label = `▶︎ Start`; kind = "start";
         }
-        if (selectedTargetId === "roblox") disabled = !bridgeOk && !addonOk;
       } else {
         toneClass = "noagent";
         msg = `No agent. Open a new chat.`;
@@ -3661,119 +3553,59 @@
       A.bridge = s;
       if (!bar) return;
       const servers = s.servers || [];
-      if (selectedTargetId !== "roblox") {
-        const selected = servers.find((item) => item.id === selectedTargetId);
-        const serverConnected = !!s.connected && !!selected && !!selected.alive;
-        const ready = serverConnected &&
-          ((selected.tools || 0) > 0 || activeTools().length > 0);
-        bridgeOk = ready;
-        studioDown = false;
-        placeDown = false;
-        appDown = false;
-        studioProcUp = false;
-        addonOk = false;
-        setTarget(selectedTargetId);
-        if (wasConnected && !s.connected) bridgeAlert(true);
-        if (s.connected) bridgeAlert(false);
-        wasConnected = s.connected;
-        if (s.connected && !setupSeen) {
-          setupSeen = true;
-          try { chrome.storage.local.set({ zsSetupSeen: true }); } catch {}
-        }
-        if (selectedTargetId === "vscode" && serverConnected && !workspaceProbePending &&
-            Date.now() - workspaceProbeAt >= 5000) {
-          workspaceProbeAt = Date.now();
-          workspaceProbePending = true;
-          ensureTools(false).then(() => {
-            const workspaceTool = activeTools().find((tool) => bareToolName(tool.name) === "list_dir");
-            bridgeOk = serverConnected &&
-              ((selected.tools || 0) > 0 || activeTools().length > 0);
-            if (!workspaceTool) {
-              workspaceReady = false;
-              return;
-            }
-            return bg({
-              type: "call_tool",
-              name: workspaceTool.name,
-              arguments: { path: "." },
-              timeout: 5000,
-            }).then((result) => {
-              workspaceReady = !!(result && result.ok);
-            });
-          }).catch((error) => {
-            workspaceReady = false;
-            console.warn("[snapgentV3] Could not verify VS Code workspace:", error);
-          }).finally(() => {
-            workspaceProbePending = false;
-            renderBar();
-          });
-        } else if (selectedTargetId === "vscode" && !serverConnected) {
-          workspaceReady = false;
-        }
-        renderBar();
-        refreshSetup(s.connected);
-        return;
-      }
-      // snapgentV3 status tracks ONLY the primary Roblox MCP server. Every other
-      // server is an addon and must NEVER make the status/gate look connected while
-      // Roblox itself is down. Old bridges don't send per-server health, so fall
-      // back to the aggregate signals they do send (mcpAlive / total tools).
-      const roblox = servers.find((x) => x.id === "roblox");
-      const mcpUp = roblox ? !!roblox.alive : (!!s.mcpAlive || servers.some((x) => x.alive));
-      // Roblox-only count drives the connectivity gate; an addon must never make
-      // the Roblox target appear usable while Roblox itself is down...
-      const robloxTools = roblox ? (roblox.tools || 0) : (s.tools || 0);
-      const mcpOk = s.connected && (mcpUp || robloxTools > 0);
-      // ...but the DISPLAYED count is the aggregate across every server (Roblox +
-      // addons like Blender), so it stays consistent with the bar and doesn't
-      // under-report when addon servers are loaded.
-      const totalTools = servers.reduce((n, x) => n + (x.tools || 0), 0) || s.tools || robloxTools;
-      // studio === false means the MCP server answered but the Studio is not USABLE
-      // (no place loaded). studioApp tells the two sub-cases apart:
-      //   studioApp === false → no Studio connected at all (app closed OR its MCP
-      //                         server option is disabled - indistinguishable).
-      //   studioApp === true  → Studio open but no place loaded (home screen / place
-      //                         closed mid-session). THIS is the case that used to
-      //                         wrongly read "Connected".
-      // null/undefined = unknown (old bridge / probe busy) → don't degrade.
-      const studioOff = mcpOk && s.studio === false;
-      const noApp = studioOff && s.studioApp === false;
-      const noPlace = studioOff && s.studioApp === true;
-      const ok = mcpOk && !studioOff;
-      // Studio PROCESS running on the machine (bridge-side tasklist check).
-      // Splits noApp into its two truly different situations: Studio not
-      // launched at all vs Studio OPEN but its MCP plugin never registered
-      // with the bridge. The plugin only attempts to register ONCE (at Studio
-      // boot or on a panel/toggle interaction) and never retries by itself,
-      // so for the second case "open Roblox Studio" is dead-end advice - the
-      // action that actually works (validated live 3x, 2026-07-11) is opening
-      // Assistant Settings > MCP Servers inside the already-open Studio.
-      const procUp = s.studioProc === true;
-      let txt;
-      if (!s.connected) txt = "Bridge offline, run start.bat";
-      else if (!mcpOk) txt = "Bridge OK, open Roblox Studio";
-      else if (noPlace) txt = "Roblox Studio is open but no place is loaded - open a place";
-      else if (noApp) txt = procUp
-        ? "Studio is open but not connected - in Studio, open Assistant Settings > MCP Servers (or toggle its MCP server off/on)"
-        : "Roblox Studio not connected - open it and enable its MCP server";
-      else if (studioOff) txt = "Studio not connected";
-      else txt = `Connected · ${totalTools} tools ready`;
-      stateEl.title = txt;
-      bridgeOk = ok;
-      studioDown = studioOff;
-      placeDown = noPlace;
-      appDown = noApp;
-      studioProcUp = procUp;
-      // A non-Roblox MCP (Blender, Sketchfab, ...) that is actually alive. When
-      // Roblox itself is down but such a server is present, the session can still
-      // start in a DEGRADED mode - the agent just can't touch Roblox until Studio
-      // is back. Gated on s.connected so a dropped bridge never reads as usable.
-      addonOk = !!s.connected && servers.some((x) => x.id !== "roblox" && x.alive && (x.tools || 0) > 0);
-      // Bridge-drop alert: a clear, persistent red banner the moment a
-      // previously-connected bridge goes offline. Clears on reconnect.
+      const selected = servers.find((item) =>
+        item.id === selectedTargetId || (selectedTargetId === "zededitor" && item.id === "zed")
+      );
+      const serverConnected = !!s.connected && !!selected && !!selected.alive;
+      const ready = serverConnected &&
+        ((selected.tools || 0) > 0 || activeTools().length > 0);
+      bridgeOk = ready;
+      studioDown = false;
+      placeDown = false;
+      appDown = false;
+      studioProcUp = false;
+      addonOk = false;
+      setTarget(selectedTargetId);
       if (wasConnected && !s.connected) bridgeAlert(true);
       if (s.connected) bridgeAlert(false);
       wasConnected = s.connected;
+      if (s.connected && !setupSeen) {
+        setupSeen = true;
+        try { chrome.storage.local.set({ zsSetupSeen: true }); } catch {}
+      }
+      if (serverConnected && !workspaceProbePending && Date.now() - workspaceProbeAt >= 5000) {
+        workspaceProbeAt = Date.now();
+        workspaceProbePending = true;
+        ensureTools(false).then(() => {
+          const workspaceTool = activeTools().find((tool) => bareToolName(tool.name) === "list_dir");
+          bridgeOk = serverConnected &&
+            ((selected.tools || 0) > 0 || activeTools().length > 0);
+          if (!workspaceTool) {
+            workspaceReady = false;
+            return;
+          }
+          return bg({
+            type: "call_tool",
+            name: workspaceTool.name,
+            arguments: { path: "." },
+            timeout: 5000,
+            server: selectedTargetId,
+          }).then((result) => {
+            workspaceReady = !!(result && result.ok);
+          });
+        }).catch((error) => {
+          workspaceReady = false;
+          console.warn(`[snapgentV3] Could not verify ${selectedTargetId} workspace:`, error);
+        }).finally(() => {
+          workspaceProbePending = false;
+          renderBar();
+        });
+      } else if (!serverConnected) {
+        workspaceReady = false;
+      }
+      renderBar();
+      refreshSetup(s.connected);
+      return;
       // Once the bridge has connected at least once, onboarding is done: never
       // resurface the "download the bridge" setup card again (otherwise, if the
       // bridge later drops, it would reappear on top of the bridge-lost banner).

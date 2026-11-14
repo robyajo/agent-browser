@@ -16,23 +16,19 @@ function render(s) {
   const list = s.servers || [];
   const up = list.filter((x) => x.alive).length;
   const mcpOk = s.connected && (s.mcpAlive || up > 0 || s.tools > 0);
-  const studioOff = mcpOk && s.studio === false; // MCP up but no Studio attached
-  const ok = mcpOk && !studioOff;
   const dot = document.getElementById("dot");
-  dot.className = "dot " + (!s.connected ? "bad" : ok ? "ok" : "warn");
+  dot.className = "dot " + (!s.connected ? "bad" : mcpOk ? "ok" : "warn");
   state.textContent = s.connected
-    ? (ok ? "Connected"
-        : studioOff ? "No Studio"
-        : "Open Studio")
+    ? (mcpOk ? "Connected" : "No Servers Online")
     : "Bridge offline";
   const ver = document.getElementById("ver");
   const extVer = chrome.runtime.getManifest().version;
   ver.textContent = !s.connected ? `ext v${extVer}`
     : s.bridgeVersion ? `ext v${extVer} · bridge v${s.bridgeVersion}`
     : `ext v${extVer} · bridge old`;
-  tools.textContent = s.connected ? `${s.tools || 0} tools` : "Run start.bat";
+  tools.textContent = s.connected ? `${s.tools || 0} tools` : "Run ./start_zed.sh";
   servers.textContent = s.connected
-    ? list.map((x) => `${x.alive ? "●" : "○"} ${x.id} (${x.alive ? x.tools + " tools" : "down"})`).join("\n")
+    ? list.map((x) => `${x.alive ? "●" : "○"} ${x.id === "zededitor" || x.id === "zed" ? "Zed Editor" : x.id === "vscode" ? "VS Code" : x.id} (${x.alive ? x.tools + " tools" : "down"})`).join("\n")
     : "";
 }
 
@@ -64,6 +60,20 @@ document.getElementById("settings").addEventListener("click", () => {
     }
   });
 });
+
+const zedBtn = document.getElementById("zed-guide-btn");
+const zedPanel = document.getElementById("zed-guide-panel");
+const closeZed = document.getElementById("close-zed-guide");
+if (zedBtn && zedPanel) {
+  zedBtn.addEventListener("click", () => {
+    zedPanel.style.display = zedPanel.style.display === "none" ? "block" : "none";
+  });
+}
+if (closeZed && zedPanel) {
+  closeZed.addEventListener("click", () => {
+    zedPanel.style.display = "none";
+  });
+}
 
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg && msg.type === "zs-status") render(msg);

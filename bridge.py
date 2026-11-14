@@ -501,11 +501,16 @@ class Bridge:
         # the old behaviour).
         allowed = request.get("server")
         if isinstance(allowed, str) and allowed:
+            allowed_ids = {allowed}
+            if allowed in ("zededitor", "zed"):
+                allowed_ids.update({"zededitor", "zed"})
             if server is None and "/" not in name:
-                allowed_server = self.servers.get(allowed)
-                if allowed_server and allowed_server.alive and any(t["name"] == name for t in allowed_server.tools):
-                    server, tool_name = allowed_server, name
-            if server is not None and server.server_id != allowed:
+                for aid in allowed_ids:
+                    allowed_server = self.servers.get(aid)
+                    if allowed_server and allowed_server.alive and any(t["name"] == name for t in allowed_server.tools):
+                        server, tool_name = allowed_server, name
+                        break
+            if server is not None and server.server_id not in allowed_ids:
                 await self._send_client(
                     websocket,
                     {
@@ -578,6 +583,11 @@ class Bridge:
         if "/" in name:
             server_id, bare_name = name.split("/", 1)
             server = self.servers.get(server_id)
+            if not server:
+                if server_id == "zededitor":
+                    server = self.servers.get("zed")
+                elif server_id == "zed":
+                    server = self.servers.get("zededitor")
             if server and server.alive and any(tool["name"] == bare_name for tool in server.tools):
                 return server, bare_name
         matches = [
