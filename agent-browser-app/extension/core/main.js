@@ -1773,7 +1773,7 @@
     workspaceSkills = allSkills.filter((s) => isSkillEnabled(s.name));
   }
 
-  // Scan .snapgent/skills/*/SKILL.md and fill workspaceSkills with name +
+  // Scan .agent-browser/skills/*/SKILL.md (or fallback .snapgent/skills/*/SKILL.md) and fill workspaceSkills with name +
   // one-line description (progressive disclosure: bodies are read on demand by
   // the model via read_file). Never throws; on any problem the list stays empty.
   async function loadWorkspaceSkills() {
@@ -1783,8 +1783,12 @@
       const findTool = tools.find((t) => bareToolName(t.name) === "find_files");
       const readTool = tools.find((t) => bareToolName(t.name) === "read_file");
       if (!findTool || !readTool) return;
-      const found = await bg({ type: "call_tool", name: findTool.name,
-        arguments: { path: ".snapgent/skills", pattern: "**/SKILL.md" }, timeout: 5000 });
+      let found = await bg({ type: "call_tool", name: findTool.name,
+        arguments: { path: ".agent-browser/skills", pattern: "**/SKILL.md" }, timeout: 5000 });
+      if (!found || !found.ok || !found.text || found.text === "[]") {
+        found = await bg({ type: "call_tool", name: findTool.name,
+          arguments: { path: ".snapgent/skills", pattern: "**/SKILL.md" }, timeout: 5000 });
+      }
       if (!found || !found.ok || !found.text) return;
       let paths;
       try { paths = JSON.parse(found.text); } catch { return; }
@@ -1828,7 +1832,7 @@
     return { ok: true, name, description };
   }
 
-  // Write a validated skill to .snapgent/skills/<name>/SKILL.md. create_file never
+  // Write a validated skill to .agent-browser/skills/<name>/SKILL.md. create_file never
   // overwrites, so an existing name is rejected. Imported skills start DISABLED.
   async function importSkillText(text) {
     const v = validateSkillText(text);
@@ -1837,7 +1841,7 @@
     if (!createTool) return { ok: false, error: "create_file is not available on this server." };
     if (allSkills.some((s) => s.name === v.name)) return { ok: false, error: `A skill named "${v.name}" already exists.` };
     const r = await bg({ type: "call_tool", name: createTool.name,
-      arguments: { path: `.snapgent/skills/${v.name}/SKILL.md`, content: text }, timeout: 8000 });
+      arguments: { path: `.agent-browser/skills/${v.name}/SKILL.md`, content: text }, timeout: 8000 });
     if (!r || !r.ok) return { ok: false, error: (r && (r.error || r.text)) || "Write failed." };
     setSkillEnabled(v.name, false);
     return { ok: true, name: v.name };
@@ -3289,7 +3293,7 @@
         if (mode !== "list") { renderImport(); return; }
         const rows = allSkills.length
           ? allSkills.map((s) => `<label class="zs-mcp-row"><span class="zs-mcp-row-info"><span class="zs-mcp-row-name">${esc(s.name)}</span><span class="zs-mcp-row-meta">${esc(s.description)}</span></span><input type="checkbox" class="zs-mcp-check" data-name="${esc(s.name)}" ${isSkillEnabled(s.name) ? "checked" : ""}><span class="zs-mcp-toggle"></span></label>`).join("")
-          : `<div class="zs-mcp-pop-note">No skills found in .snapgent/skills/ (VS Code workspace only).</div>`;
+          : `<div class="zs-mcp-pop-note">No skills found in .agent-browser/skills/ (VS Code workspace only).</div>`;
         pop.innerHTML =
           `<div class="zs-mcp-pop-card" role="dialog" aria-label="Skills settings">` +
             `<div class="zs-mcp-pop-head"><span>Skills</span><button class="zs-mcp-pop-close" aria-label="Close">&#10005;</button></div>` +

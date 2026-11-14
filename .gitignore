@@ -29,3 +29,5 @@ devtools/
 Thumbs.db
 desktop.ini
 __pycache__/
+.venv*
+

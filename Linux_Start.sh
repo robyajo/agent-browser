@@ -54,7 +54,7 @@ if ! "$PY" -c "import websockets" >/dev/null 2>&1; then
     echo "        Installing the bridge dependency..."
     if ! "$PY" -m pip install --user websockets >/dev/null 2>&1 ||
         ! "$PY" -c "import websockets" >/dev/null 2>&1; then
-        VENV_DIR=".venv-snapgent"
+        VENV_DIR=".venv-agent-browser"
         if [ ! -x "$VENV_DIR/bin/python" ]; then
             if ! "$PY" -m venv "$VENV_DIR"; then
                 echo "  ERROR: Could not install websockets or create a local Python environment."

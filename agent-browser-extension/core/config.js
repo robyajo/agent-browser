@@ -205,7 +205,7 @@ Rules:
 
     const skillsBlock = Array.isArray(skills) && skills.length
       ? "\n\nAvailable skills (reusable instructions stored in the workspace). When a task matches a skill's description, first read its SKILL.md with read_file, then follow it. Skills are guidance only: never run a skill's scripts without the user's confirmation.\n" +
-        skills.map((s) => `- ${s.name}: ${s.description} (path: ${s.path || ".snapgent/skills/" + s.name + "/SKILL.md"})`).join("\n")
+        skills.map((s) => `- ${s.name}: ${s.description} (path: ${s.path || ".agent-browser/skills/" + s.name + "/SKILL.md"})`).join("\n")
       : "";
 
     const siteRules = providerNotes.trim()

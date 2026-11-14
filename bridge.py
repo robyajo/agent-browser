@@ -146,7 +146,7 @@ class MCPServer:
                     {
                         "protocolVersion": MCP_PROTOCOL_VERSION,
                         "capabilities": {},
-                        "clientInfo": {"name": "snapgent-bridge", "version": BRIDGE_VERSION},
+                        "clientInfo": {"name": "agent-browser-bridge", "version": BRIDGE_VERSION},
                     },
                     timeout=12,
                 )
@@ -750,19 +750,19 @@ class Bridge:
                 models_data = {
                     "object": "list",
                     "data": [
-                        {"id": "web-ai", "object": "model", "owned_by": "snapgent", "display_name": "Switch AI / Active Browser Tab (Snapgent Free)"},
-                        {"id": "chatgpt-web", "object": "model", "owned_by": "snapgent", "display_name": "ChatGPT Web (Snapgent Free)"},
-                        {"id": "claude-web", "object": "model", "owned_by": "snapgent", "display_name": "Claude Web (Snapgent Free)"},
-                        {"id": "gemini-web", "object": "model", "owned_by": "snapgent", "display_name": "Gemini Web (Snapgent Free)"},
-                        {"id": "meta-web", "object": "model", "owned_by": "snapgent", "display_name": "Meta AI Web (Snapgent Free)"},
-                        {"id": "deepseek-web", "object": "model", "owned_by": "snapgent", "display_name": "DeepSeek Web (Snapgent Free)"},
-                        {"id": "qwen-web", "object": "model", "owned_by": "snapgent", "display_name": "Qwen Web (Snapgent Free)"},
-                        {"id": "mistral-web", "object": "model", "owned_by": "snapgent", "display_name": "Mistral Web (Snapgent Free)"},
-                        {"id": "grok-web", "object": "model", "owned_by": "snapgent", "display_name": "Grok Web (Snapgent Free)"},
-                        {"id": "kimi-web", "object": "model", "owned_by": "snapgent", "display_name": "Kimi Web (Snapgent Free)"},
-                        {"id": "glm-web", "object": "model", "owned_by": "snapgent", "display_name": "GLM Web (Snapgent Free)"},
-                        {"id": "ptero-web", "object": "model", "owned_by": "snapgent", "display_name": "Ptero Web (Snapgent Free)"},
-                        {"id": "arena-web", "object": "model", "owned_by": "snapgent", "display_name": "Arena Web (Snapgent Free)"},
+                        {"id": "web-ai", "object": "model", "owned_by": "agent-browser", "display_name": "Switch AI / Active Browser Tab (Agent Browser Free)"},
+                        {"id": "chatgpt-web", "object": "model", "owned_by": "agent-browser", "display_name": "ChatGPT Web (Agent Browser Free)"},
+                        {"id": "claude-web", "object": "model", "owned_by": "agent-browser", "display_name": "Claude Web (Agent Browser Free)"},
+                        {"id": "gemini-web", "object": "model", "owned_by": "agent-browser", "display_name": "Gemini Web (Agent Browser Free)"},
+                        {"id": "meta-web", "object": "model", "owned_by": "agent-browser", "display_name": "Meta AI Web (Agent Browser Free)"},
+                        {"id": "deepseek-web", "object": "model", "owned_by": "agent-browser", "display_name": "DeepSeek Web (Agent Browser Free)"},
+                        {"id": "qwen-web", "object": "model", "owned_by": "agent-browser", "display_name": "Qwen Web (Agent Browser Free)"},
+                        {"id": "mistral-web", "object": "model", "owned_by": "agent-browser", "display_name": "Mistral Web (Agent Browser Free)"},
+                        {"id": "grok-web", "object": "model", "owned_by": "agent-browser", "display_name": "Grok Web (Agent Browser Free)"},
+                        {"id": "kimi-web", "object": "model", "owned_by": "agent-browser", "display_name": "Kimi Web (Agent Browser Free)"},
+                        {"id": "glm-web", "object": "model", "owned_by": "agent-browser", "display_name": "GLM Web (Agent Browser Free)"},
+                        {"id": "ptero-web", "object": "model", "owned_by": "agent-browser", "display_name": "Ptero Web (Agent Browser Free)"},
+                        {"id": "arena-web", "object": "model", "owned_by": "agent-browser", "display_name": "Arena Web (Agent Browser Free)"},
                     ]
                 }
                 # Merge models from Antigravity Bridge if running
@@ -1043,7 +1043,7 @@ async def run() -> None:
         ping_timeout=20,
     )
     http_server = await bridge.start_http_server(HOST, HTTP_PORT)
-    log(f"snapgent bridge v{BRIDGE_VERSION}")
+    log(f"agent-browser bridge v{BRIDGE_VERSION}")
     log(f"listening on ws://{HOST}:{PORT} - load the extension and open a supported AI chat")
     loop = asyncio.get_running_loop()
     stop_event = asyncio.Event()
