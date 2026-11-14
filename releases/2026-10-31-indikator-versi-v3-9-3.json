@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-31",
+  "type": "improvement",
+  "project": {
+    "name": "Agent Browser"
+  },
+  "title": {
+    "id": "Transparansi Versi Layanan pada Tampilan Antarmuka v3.9.3",
+    "en": "Service Version Transparency on User Interface v3.9.3"
+  },
+  "body": {
+    "id": "Pembaruan v3.9.3 menghadirkan indikator versi langsung pada menu utama, memudahkan pengguna memastikan seluruh komponen aplikasi telah diperbarui.",
+    "en": "Update v3.9.3 introduces live version indicators in the main interface, making it easy to confirm all components are up to date."
+  },
+  "items": [
+    {
+      "type": "new",
+      "id": "Indikator Versi Terpadu: Menu aplikasi kini menampilkan status versi ekstensi dan aplikasi penghubung secara transparan.",
+      "en": "Unified Version Indicators: The app menu now transparently displays both extension and connector versions."
+    },
+    {
+      "type": "improvement",
+      "id": "Peringatan Komponen Usang: Sistem memberi tahu pengguna jika aplikasi penghubung perlu dijalankan ulang agar mendapatkan fitur terbaru.",
+      "en": "Outdated Component Alerts: The system notifies users if the connector needs a restart to apply the latest updates."
+    },
+    {
+      "type": "update",
+      "id": "Penyelarasan Versi: Peningkatan nomor rilis ke versi 3.9.3 pada seluruh panduan dan tautan instalasi.",
+      "en": "Version Alignment: Updated release version to 3.9.3 across all documentation and installation links."
+    }
+  ]
+}
+

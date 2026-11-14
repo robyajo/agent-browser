@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-31",
+  "type": "fix",
+  "project": {
+    "name": "Agent Browser"
+  },
+  "title": {
+    "id": "Peningkatan Kapasitas Pertukaran Data dan Pemulihan Otomatis v3.9.2",
+    "en": "Data Exchange Capacity Expansion and Auto-Recovery v3.9.2"
+  },
+  "body": {
+    "id": "Pembaruan v3.9.2 memperluas daya tampung penerimaan data berukuran besar dan menambahkan pemulihan otomatis jika koneksi layanan terputus.",
+    "en": "Update v3.9.2 expands data handling capacity for large requests and introduces automatic recovery if a service connection drops."
+  },
+  "items": [
+    {
+      "type": "fix",
+      "id": "Penanganan Dokumen dan Berkas Besar: Sistem kini mampu memproses berkas dan daftar direktori berukuran besar tanpa mengalami jeda atau berhenti merespons.",
+      "en": "Large Document and File Handling: The system can now process large files and directory listings without hanging or timing out."
+    },
+    {
+      "type": "fix",
+      "id": "Pemulihan Layanan Otomatis: Jika sambungan ke layanan pendukung terhenti, sistem akan mendeteksi dan menghubungkan kembali secara otomatis.",
+      "en": "Automatic Service Recovery: If a background service connection stops, the system detects it and reconnects automatically."
+    },
+    {
+      "type": "improvement",
+      "id": "Peningkatan Versi Layanan: Pembaruan versi konektor dan ekstensi ke 3.9.2 untuk kestabilan jangka panjang.",
+      "en": "Service Version Bump: Connector and extension versions updated to 3.9.2 for long-term stability."
+    }
+  ]
+}
+

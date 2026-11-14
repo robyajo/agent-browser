@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-31",
+  "type": "improvement",
+  "project": {
+    "name": "Agent Browser"
+  },
+  "title": {
+    "id": "Inisialisasi Paralel Cepat dan Pembaruan Aplikasi Mandiri v3.9.4",
+    "en": "Fast Parallel Initialization and Standalone App Update v3.9.4"
+  },
+  "body": {
+    "id": "Pembaruan v3.9.4 mempercepat waktu mulai aplikasi dengan inisialisasi paralel, sambungan instan, serta penyempurnaan paket aplikasi mandiri.",
+    "en": "Update v3.9.4 speeds up app startup via parallel initialization, instant connection, and improvements to standalone packages."
+  },
+  "items": [
+    {
+      "type": "improvement",
+      "id": "Pemuatan Layanan Bersamaan: Berbagai layanan kini dimulai secara bersamaan sehingga aplikasi siap digunakan jauh lebih cepat dan gangguan pada satu layanan tidak menghambat yang lain.",
+      "en": "Concurrent Service Loading: Services now start in parallel, making the app ready much faster while preventing a single slow service from blocking others."
+    },
+    {
+      "type": "improvement",
+      "id": "Sambungan Antarmuka Seketika: Ekstensi peramban kini terhubung langsung saat aplikasi dibuka dan memperbarui perkakas secara bertahap begitu siap.",
+      "en": "Instant Interface Connection: The browser extension connects immediately upon opening and registers tools incrementally as they become ready."
+    },
+    {
+      "type": "fix",
+      "id": "Penyempurnaan Berkas Mandiri: Memperbaiki pencarian berkas konfigurasi dan pencatatan riwayat pada paket aplikasi mandiri.",
+      "en": "Standalone Package Refinement: Fixed configuration lookup and activity logging in standalone app packages."
+    }
+  ]
+}
+

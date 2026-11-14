@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-31",
+  "type": "fix",
+  "project": {
+    "name": "Agent Browser"
+  },
+  "title": {
+    "id": "Pembaruan Menu Target dan Keandalan Navigasi Layanan v3.9.1",
+    "en": "Target Menu and Service Navigation Reliability Update v3.9.1"
+  },
+  "body": {
+    "id": "Pembaruan v3.9.1 memperbaiki respon klik pada menu pilihan target layanan dan memastikan daftar server langsung diperbarui saat diaktifkan kembali.",
+    "en": "Update v3.9.1 improves click responsiveness on the service target menu and ensures the server list updates immediately when re-enabled."
+  },
+  "items": [
+    {
+      "type": "fix",
+      "id": "Keandalan Pilihan Target: Menu pilihan kini dapat diklik dengan lancar tanpa gangguan pembaruan tampilan di latar belakang.",
+      "en": "Target Selection Reliability: The target dropdown can now be clicked smoothly without background refresh interruptions."
+    },
+    {
+      "type": "fix",
+      "id": "Pembaruan Otomatis Daftar Layanan: Server yang diaktifkan kembali kini langsung muncul di menu pilihan tanpa perlu memuat ulang panel.",
+      "en": "Automatic Service List Refresh: Re-enabled servers now appear in the selection menu immediately without reopening the panel."
+    },
+    {
+      "type": "improvement",
+      "id": "Peningkatan Panduan & Versi: Penambahan petunjuk penanganan kendala umum serta pembaruan versi ekstensi ke 3.9.1.",
+      "en": "Guidance & Version Improvements: Added troubleshooting steps and updated extension version to 3.9.1."
+    }
+  ]
+}
+

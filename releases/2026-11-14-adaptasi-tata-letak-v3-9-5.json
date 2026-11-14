@@ -1,0 +1,38 @@
+{
+  "date": "2026-11-14",
+  "type": "fix",
+  "project": {
+    "name": "Agent Browser"
+  },
+  "title": {
+    "id": "Adaptasi Tata Letak Percakapan dan Sesi Latar Belakang v3.9.5",
+    "en": "Chat Layout Adaptation and Background Sessions v3.9.5"
+  },
+  "body": {
+    "id": "Pembaruan v3.9.5 memulihkan komunikasi dengan platform kecerdasan buatan pasca pembaruan antarmuka, serta memperkenalkan opsi sesi di latar belakang.",
+    "en": "Update v3.9.5 restores communication with AI platforms following recent layout updates and introduces background session support."
+  },
+  "items": [
+    {
+      "type": "fix",
+      "id": "Pemulihan Pembacaan Respons: Menyesuaikan pendeteksian pesan agar balasan dari asisten dapat dibaca dan dieksekusi secara akurat.",
+      "en": "Response Reading Restoration: Adjusted message detection to reliably parse and execute replies from assistants."
+    },
+    {
+      "type": "fix",
+      "id": "Penanganan Percakapan Penuh: Memberikan pemberitahuan yang jelas dan ramah saat percakapan mencapai batas alih-alih mengalami jeda pemuatan.",
+      "en": "Saturated Conversation Handling: Provides clear and helpful notifications when conversation limits are reached instead of waiting on timeouts."
+    },
+    {
+      "type": "new",
+      "id": "Dukungan Sesi Latar Belakang: Menambahkan opsi untuk menjaga sesi tugas tetap berjalan pada tab peramban yang tidak aktif.",
+      "en": "Background Session Support: Added an option to keep task sessions active even when running in inactive browser tabs."
+    },
+    {
+      "type": "update",
+      "id": "Penyelarasan Ekstensi dan Aplikasi: Pembaruan versi ke 3.9.5 dengan sinkronisasi logika skrip antara ekstensi dan aplikasi pendukung.",
+      "en": "Extension and App Synchronization: Bumped to version 3.9.5 with script synchronization across extensions and companion apps."
+    }
+  ]
+}
+
