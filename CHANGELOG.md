@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to snapgentV3 Free are documented here.
+All notable changes to Agent Browser are documented here.
 
 ## [V3.9.5] - 2026-11-14
 
@@ -24,9 +24,9 @@ All notable changes to snapgentV3 Free are documented here.
   the previous behaviour, where a hidden tab pauses.
 
 ### Changed
-- Extension and Snapgent App versions bumped to **3.9.5**. The bridge is unchanged
+- Extension and Agent Browser App versions bumped to **3.9.5**. The bridge is unchanged
   (still 3.9.4).
-- The Snapgent App now bundles the same extension scripts as the browser extension.
+- The Agent Browser App now bundles the same extension scripts as the browser extension.
 
 ## [V3.9.4] - 2026-10-31
 
@@ -61,7 +61,7 @@ Delete that file so the new bridge is used.
 
 ### Added
 - **Bridge version is now visible.** The bridge defines `BRIDGE_VERSION`, writes it
-  to the startup log (`snapgent bridge v...`), sends it to the extension in the
+  to the startup log (`agent-browser bridge v...`), sends it to the extension in the
   `connected` message, and reports it as the MCP `clientInfo` version instead of
   the fixed `1.0.0`.
 - **Versions in the popup header.** The popup shows `ext vX · bridge vY`. If the
@@ -142,12 +142,12 @@ Pull the latest `main`, reload the extension at `chrome://extensions` (or
 
 ### Added
 - **Skills.** Reusable instructions stored in the workspace at
-  `.snapgent/skills/<name>/SKILL.md`. The skill list is added to the system
+  `.agent-browser/skills/<name>/SKILL.md`. The skill list is added to the system
   prompt at the start of a chat, and the AI reads a skill's `SKILL.md` with
   `read_file` when a task matches its description. Skills are guidance only and
   scripts are never run without user confirmation. Includes an example
   `commit-message` skill.
-- **Skills popup.** A star (★) button in the snapgentV3 menu opens a popup with
+- **Skills popup.** A star (★) button in the Agent Browser menu opens a popup with
   a toggle for each skill, so only the skills you want are listed to the AI.
 - **Skill import.** Import a skill by pasting text or by choosing a `.md` or
   `.txt` file, then review it and confirm before it is saved.
@@ -228,7 +228,7 @@ Pull the latest `main`, reload the extension at `chrome://extensions` (or
 ## [V3.4] - 2026-10-29
 
 ### Changed
-- **Extension renamed to snapgentV3.** The extension name and description no
+- **Extension renamed to Agent Browser.** The extension name and description no
   longer refer to a Roblox Studio agent; they now describe a VS Code agent
   connected through the local bridge.
 - **ChatGPT: supports the newer chatgpt.com layout.** Assistant replies rendered
@@ -272,15 +272,15 @@ Pull the latest `main`, reload the extension at `chrome://extensions` (or
 ## [3.0.0] - 2026-10-25
 
 ### Changed
-- Align the extension version with the SnapgentV3 release line.
+- Align the extension version with the Agent Browser release line.
 
 ## [1.5.4] - 2026-09-06
 
 ### Fixed
-- **ChatGPT: the snapgentV3 bar is back where it belongs, above the composer.**
+- **ChatGPT: the Agent Browser bar is back where it belongs, above the composer.**
   ChatGPT redesigned its input box and renamed the layout slots it is built
   from: the full-width row across the top used to be called `header` and is now
-  called `eyebrow`. snapgentV3 still asked for `header`, a name that no longer
+  called `eyebrow`. Agent Browser still asked for `header`, a name that no longer
   exists, so the browser invented a place for the bar instead - it landed in a
   stray strip at the bottom right of the composer, and the text field itself was
   squeezed to zero width in the process. The bar now claims the correct row, and
@@ -301,7 +301,7 @@ Pull the latest `main`, reload the extension at `chrome://extensions` (or
 - **Kimi moved to kimi.ai.** Kimi's old address, `kimi.com`, now asks for a
   Chinese phone number to sign in, which locked most people out. Kimi runs on
   `kimi.ai` from now on - the extension only activates there. The page itself is
-  unchanged, so nothing about using Kimi with snapgentV3 is different: open
+  unchanged, so nothing about using Kimi with Agent Browser is different: open
   https://www.kimi.ai, the bar appears above the input box as before. If you had
   Kimi tabs open on the old address, reopen them on the new one.
 - **DeepSeek: the Instant model is now allowed to run the agent.** Starting a
@@ -316,14 +316,14 @@ Pull the latest `main`, reload the extension at `chrome://extensions` (or
 ### Fixed
 - **DeepSeek: a reply written in DeepSeek's own tool-call markup no longer kills
   the turn.** DeepSeek sometimes answers with its internal DSML invoke tags
-  instead of a snapgentV3 command. That format carries none of the markers
-  snapgentV3 looks for, so nothing recognised it as a command attempt: the tool
+  instead of a Agent Browser command. That format carries none of the markers
+  Agent Browser looks for, so nothing recognised it as a command attempt: the tool
   never ran, the raw tags were left on screen, and the agent silently stopped
   with the user waiting on a dead turn. It is now detected, the markup is hidden
   behind a tool chip like any other command, and DeepSeek is told the format is
   unreadable so it rewrites the call properly. The chip shows the usual spinner
   while the model is still writing, then settles red as "wrong format".
-- **ChatGPT: the snapgentV3 bar no longer collides with the composer's rounded
+- **ChatGPT: the Agent Browser bar no longer collides with the composer's rounded
   corners.** The composer card is rounded by 28px and the bar sits flush against
   its top edge, so the Discord button's corner fell outside the rounded shape and
   was sliced off by the card. Both ends of the bar are inset to clear the curve.
@@ -354,9 +354,9 @@ Pull the latest `main`, reload the extension at `chrome://extensions` (or
   (seen on Qwen writing for 400s and more) the loop could give up while the model
   was still going; eight seconds later the completed command was written off for
   good. That window is now three minutes, so the command actually runs.
-- **A clear message when snapgentV3 is updated while a tab is open.** Chrome
+- **A clear message when Agent Browser is updated while a tab is open.** Chrome
   updates extensions underneath open tabs, which leaves the page running a
-  version that no longer exists. snapgentV3 reported this as "the bridge stopped
+  version that no longer exists. Agent Browser reported this as "the bridge stopped
   on your PC - run start.bat", sending you to fix something that was never
   broken. It now says plainly that the page needs reloading, and offers a Reload
   button - your bridge and Studio are untouched.
@@ -367,7 +367,7 @@ Pull the latest `main`, reload the extension at `chrome://extensions` (or
 ## [1.5.1] - 2026-08-13
 
 ### Added
-- **ChatGPT support (chatgpt.com).** snapgentV3 now runs on ChatGPT as an
+- **ChatGPT support (chatgpt.com).** Agent Browser now runs on ChatGPT as an
   eighth provider. Image input is deliberately disabled there: ChatGPT's free
   tier caps files/images on a separate quota from messages, so vision would
   work only part of the day. Reasoning mode ("Analyser") and the model picker
@@ -378,7 +378,7 @@ Pull the latest `main`, reload the extension at `chrome://extensions` (or
   ```json block as an interactive viewer whose default *Tree* view does not
   merely decorate the JSON - it **abridges** it: a large array or object is
   replaced by a summary placeholder. A 19103-character `multi_edit` was present
-  in the page as 223 characters ending in `"edits":[1 item]`, so snapgentV3 sent
+  in the page as 223 characters ending in `"edits":[1 item]`, so Agent Browser sent
   the parser a truncated object and the command came back as a parse error every
   time. This is also why the tool chip's token counter climbed while the reply
   streamed and then **collapsed to about 44 tokens** the moment the block
@@ -386,7 +386,7 @@ Pull the latest `main`, reload the extension at `chrome://extensions` (or
   Command blocks are now switched to the viewer's *Raw* tab, which holds the
   verbatim source; the 19103-character payload is read whole.
 - **Clearer diagnosis when Roblox refuses to parse Luau.** "Failed to parse
-  command code" is Studio's generic parse rejection, but snapgentV3 always
+  command code" is Studio's generic parse rejection, but Agent Browser always
   answered it with "your code block was empty or the marker was wrong". When a
   full code string *had* been sent, that advice pointed the model at a problem
   that did not exist, so it re-sent the same payload and failed again. The hint
@@ -406,7 +406,7 @@ Pull the latest `main`, reload the extension at `chrome://extensions` (or
   rendered text then stays frozen while the model keeps writing - the tool
   chip's token counter would climb, drop back to about 500 tokens, freeze
   there, and the command would run cut off. Measured live: a 21273-character
-  command of which the page exposed 4049. snapgentV3 now reads the editor's
+  command of which the page exposed 4049. Agent Browser now reads the editor's
   real document instead of the rendered page, through a new MAIN-world tap
   (`providers/chatgpt-cm.js`), the same approach already used for Qwen's
   Monaco editor. A 5.3k-token `multi_edit` now applies whole.
@@ -420,7 +420,7 @@ Pull the latest `main`, reload the extension at `chrome://extensions` (or
   `{"toolName": "get_studio_state", "studio_id": "…"}` names a real tool but
   uses the wrong key, so nothing recognised it as a command: the turn was
   finalised as a plain-text answer and the loop simply ended, leaving the agent
-  looking frozen (seen on ChatGPT in a long session). snapgentV3 now spots a
+  looking frozen (seen on ChatGPT in a long session). Agent Browser now spots a
   known tool named under `toolName` / `tool` / `name` / `function` / `action`
   and asks the model to rewrite it with the proper envelope, exactly as it
   already did for a missing `###LUA###` opener or bare parameters. Prose that
@@ -530,7 +530,7 @@ Pull the latest `main`, reload the extension at `chrome://extensions` (or
   painted a green check. The dedupe now keys on Qwen's stable per-turn id
   (`chat-response-message-<uuid>`, exposed as `itemKey`) instead of the index, so
   the collision cannot happen.
-- **Qwen: the snapgentV3 bar covered the "Expand more models" submenu.** That
+- **Qwen: the Agent Browser bar covered the "Expand more models" submenu.** That
   fly-out is a separate body-portalled `.ant-dropdown` at a low z-index, not the
   main model dropdown, so the bar drew on top of it. Raised just that dropdown
   above the bar (scoped so other Ant menus and tooltips are untouched).
@@ -554,7 +554,7 @@ Pull the latest `main`, reload the extension at `chrome://extensions` (or
 ## [1.4.6] - 2026-07-19
 
 ### Fixed
-- **Kimi's login and "priority queue" popups were covered by the snapgentV3
+- **Kimi's login and "priority queue" popups were covered by the Agent Browser
   bar**: both render as full-screen fixed masks (`.login-modal-mask` and
   `.modal-mask`) rather than a standard `[role="dialog"]`, so the generic
   overlay probe used by other providers never caught them. The anchored bar
@@ -626,7 +626,7 @@ Adds a seventh AI provider (Meta AI) and fixes a Qwen tool-turn regression, plus
 further Studio-port recovery hardening and a friendlier system prompt.
 
 ### Added
-- **Meta AI (www.meta.ai) as a provider**: full snapgentV3 support on Meta AI -
+- **Meta AI (www.meta.ai) as a provider**: full Agent Browser support on Meta AI -
   new `providers/meta.js`, manifest content script + host permissions, and the
   provider switcher entry. Handles Meta's React DOM: reasoning ("Réflexion")
   chain-of-thought is excluded from the read text, the interactive JSON viewer
@@ -707,7 +707,7 @@ third-party app silently hijacking Studio's MCP port.
   the process tree can't be read, nothing is killed (a healthy connection is
   never put at risk).
 - The extension now tells non-technical users to "Run start.bat" instead of
-  "Run python bridge.py" / "Run the snapgentV3 bridge" in the offline panel,
+  "Run python bridge.py" / "Run the Agent Browser bridge" in the offline panel,
   popup, and startup banner, matching the one-click launcher the README ships.
 
 ## [1.4.1] - 2026-07-11
@@ -820,7 +820,7 @@ stale-pipe disconnects, MCP toggle turning off after a Studio update).
   into the visible reply when nested inside a paragraph. An image filename
   could corrupt result-chip detection.
 - Kimi: added detection of Kimi's own native "Agent" mode, which conflicts
-  with snapgentV3's command protocol; Start is disabled with a warning until
+  with Agent Browser's command protocol; Start is disabled with a warning until
   it's turned off. Fixed the hidden file-upload input not existing until the
   "+" menu is opened, raw command text leaking when nested/oversized, and
   normal model prose containing "try again" being misread as a site error.
@@ -836,12 +836,12 @@ stale-pipe disconnects, MCP toggle turning off after a Studio update).
   neutral "not run" state instead.
 - A tool's own in-body error (e.g. "Output of '...': Error executing code...")
   now settles the chip red instead of green, even when the tool didn't use
-  snapgentV3's own ERROR wrapper.
+  Agent Browser's own ERROR wrapper.
 - Regenerating a stopped command no longer briefly re-shows the old call's
   chip before the new one streams in.
 
 ### Changed
-- The version number next to the snapgentV3 name in the panel is now small,
+- The version number next to the Agent Browser name in the panel is now small,
   plain text instead of a bordered green badge.
 - System prompt updated to cover multiple MCP servers: the model must call
   `list_mcp_servers` before assuming something outside Roblox is unsupported,
@@ -865,7 +865,7 @@ stale-pipe disconnects, MCP toggle turning off after a Studio update).
   MCP server / bridge offline).
 - Cross-provider: DeepSeek, Gemini, Kimi, GLM and Qwen composer menus, model
   pickers and tooltips (including GLM's search hover card and Kimi's model
-  popover) no longer render clipped or hidden behind snapgentV3's own
+  popover) no longer render clipped or hidden behind Agent Browser's own
   bar/pill/cover.
 - Cross-provider: a thinking model quoting command JSON in its own reasoning
   area no longer makes the tool chip flap between done/run/done (Gemini, Kimi,
@@ -914,7 +914,7 @@ stale-pipe disconnects, MCP toggle turning off after a Studio update).
 ## [1.0.0] - 2026-06-09
 
 ### Added
-- Initial public release of snapgentV3 Free
+- Initial public release of Agent Browser
 - Browser extension for Chrome and Edge (DeepSeek chat integration)
 - Local Python bridge (`bridge.py` + `start.bat`) for Roblox Studio communication
 - Built-in MCP server support (no plugin required - activate directly in Roblox Studio)

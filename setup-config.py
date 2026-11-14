@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Discover supported MCP editors (VS Code & Zed) and write local Snapgent config."""
+"""Discover supported MCP editors (VS Code & Zed) and write local Agent Browser config."""
 
 import json
 import sys

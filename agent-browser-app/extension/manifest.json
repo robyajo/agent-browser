@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Agent Browser - Snapgent Connector",
+  "name": "Agent Browser",
   "version": "3.9.5",
   "description": "Turn web AI chatbots (DeepSeek, Qwen, ChatGPT, Claude, etc.) into coding agents for VS Code and Zed Editor via MCP & local bridge.",
   "permissions": ["storage"],
@@ -34,7 +34,7 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Agent Browser - Snapgent Connector",
+    "default_title": "Agent Browser",
     "default_icon": {
       "16": "icon.png",
       "48": "icon.png",

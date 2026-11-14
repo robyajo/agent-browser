@@ -8,7 +8,7 @@ const ZS = (() => {
 
   // Display name + unique marker injected at the top of the system prompt so the
   // content script can reliably recognise (and camouflage) the bootstrap turn.
-  const APP_NAME = "snapgentV3";
+  const APP_NAME = "agent-browser";
   const SYS_MARKER = "⟦ZS-SYS⟧";
   // A re-statement of the system prompt mid-session (see withSysResend in
   // core/main.js). It carries SYS_MARKER TOO - that is what drives camouflage
@@ -48,12 +48,12 @@ const ZS = (() => {
       const objAlt = otherCmd ? "" : " (or ###...### block)";
       const notes = {
         malformed:
-          "ERROR: a snapgentV3 command was detected in your reply but its JSON could not be parsed. " +
+          "ERROR: an Agent Browser command was detected in your reply but its JSON could not be parsed. " +
           'Rewrite it as a single valid JSON object in plain text, exactly like {"command": "name", "params": {...}}' +
           luaMalformed + ". You may add a short note around it. " +
           "Please retry.",
         unclosed:
-          "ERROR: your snapgentV3 command was cut off before it finished - the JSON object" +
+          "ERROR: your Agent Browser command was cut off before it finished - the JSON object" +
           objAlt + " never closed, so it could not run. Rewrite the WHOLE command in one " +
           'piece as valid JSON, exactly like {"command": "name", "params": {...}}' +
           luaUnclosed + ". Please retry.",
@@ -68,7 +68,7 @@ const ZS = (() => {
           '"params". Please retry.',
         // The model named a REAL tool but under the wrong key - it wrote the call
         // the way a function-calling API would (e.g. {"toolName": "get_studio_state",
-        // "studio_id": "..."}) instead of snapgentV3's envelope. Seen live on
+        // "studio_id": "..."}) instead of Agent Browser's envelope. Seen live on
         // ChatGPT in a long session. Naming the wrong keys explicitly matters: a
         // generic "bad JSON" note made the model rewrite the SAME shape.
         toolKey:
@@ -82,7 +82,7 @@ const ZS = (() => {
         // detector and loop the error forever. Describe it, don't reproduce it.
         dsml:
           "ERROR: you wrote that call in your own internal tool-call markup (the DSML invoke/parameter " +
-          "tags). snapgentV3 cannot read that format, so the command did not run. Never use those tags " +
+          "tags). Agent Browser cannot read that format, so the command did not run. Never use those tags " +
           "here. Write the call as a single plain-text JSON object instead, exactly like " +
           '{"command": "name", "params": { ...your parameters... }} - one command per reply. ' +
           "Please retry.",
@@ -112,13 +112,13 @@ const ZS = (() => {
     // burns the whole conversation re-issuing commands that can never run. See
     // isContextInvalidated in core/main.js.
     staleExtension:
-      "ERROR: the snapgentV3 extension was reloaded or updated while this page was open, so this " +
+      "ERROR: the Agent Browser extension was reloaded or updated while this page was open, so this " +
       "tab is running a version of it that no longer exists and NO command can reach the user's " +
       "machine from here. The bridge and editor are NOT the problem - do not tell the user " +
       "to check them, and do not retry the command, because every retry will fail the same way. " +
       "Tell the user in one short sentence to RELOAD THIS PAGE (F5), then stop and wait.",
     bridgeOffline:
-      "ERROR: the local snapgentV3 bridge is unreachable, so no command could run. " +
+      "ERROR: the local Agent Browser bridge is unreachable, so no command could run. " +
       "This is an environment problem on the user's machine (the bridge is not " +
       "running, or the target editor is closed), NOT your mistake. Tell the user in " +
       "one short sentence that the bridge or editor is offline, then stop " +
@@ -180,7 +180,7 @@ const ZS = (() => {
     const displayName = isZed ? "Zed Editor" : "VS Code";
     const exampleTool = `${prefix}/read_file`;
 
-    const prompt = `CONTEXT: snapgentV3 is a browser extension that connects your plain-text JSON commands to the user's code editor through their local bridge.
+    const prompt = `CONTEXT: Agent Browser is a browser extension that connects your plain-text JSON commands to the user's code editor through their local bridge.
 Selected active editor target: ${displayName} (command prefix: "${prefix}/").
 
 The extension reads commands from your normal reply text and executes them in ${displayName}.
@@ -201,7 +201,7 @@ Rules:
 - Respect the user's requested workspace and file scope. Never perform broad or destructive changes without explicit confirmation.
 - On errors, use the returned error to adjust the next command; do not silently claim success.
 - When finished, summarize the completed work briefly.
-- You are ${siteName}; snapgentV3 carries out the commands on ${displayName}.`;
+- You are ${siteName}; Agent Browser carries out the commands on ${displayName}.`;
 
     const skillsBlock = Array.isArray(skills) && skills.length
       ? "\n\nAvailable skills (reusable instructions stored in the workspace). When a task matches a skill's description, first read its SKILL.md with read_file, then follow it. Skills are guidance only: never run a skill's scripts without the user's confirmation.\n" +
@@ -236,7 +236,7 @@ Rules:
       compactTools(tools, prefix);
     return (
       "\n\n────────────────────────────────\n" +
-      "(System note from snapgentV3 - this is an automatic REMINDER, not a request and not a new result. " +
+      "(System note from Agent Browser - this is an automatic REMINDER, not a request and not a new result. " +
       "Do NOT reply to it or run any command because of it; just keep it in mind for your next command.)\n" +
       `Reminder of ${displayName} commands (MUST use the "${prefix}/" prefix, e.g. ${prefix}/read_file):\n` +
       toolsString

@@ -32,6 +32,11 @@
       "type": "update",
       "id": "Penyelarasan Ekstensi dan Aplikasi: Pembaruan versi ke 3.9.5 dengan sinkronisasi logika skrip antara ekstensi dan aplikasi pendukung.",
       "en": "Extension and App Synchronization: Bumped to version 3.9.5 with script synchronization across extensions and companion apps."
+    },
+    {
+      "type": "update",
+      "id": "Penyelarasan Identitas Aplikasi: Menyesuaikan seluruh penamaan antarmuka, pesan sistem, dan pengenal ekstensi menjadi Agent Browser.",
+      "en": "Application Branding Alignment: Standardized all interface labels, system messages, and extension identifiers to Agent Browser."
     }
   ]
 }

@@ -26,7 +26,7 @@ Just describe what you want in chat, and the agent reads workspace files, edits 
 
 ### 3. Open Your Editor & Start Coding!
 - **For VS Code**: Open your project workspace in VS Code, choose **VS Code** in the extension target menu, open your preferred AI chat tab (e.g., https://chat.deepseek.com or https://chat.qwen.ai), and click **Start**.
-- **For Zed Editor**: Open your project in Zed Editor, configure `settings.json` (see instructions in repository README), open the Zed Assistant panel, and select **Snapgent DeepSeek (Web Free)** or **Snapgent Qwen (Web Free)**.
+- **For Zed Editor**: Open your project in Zed Editor, configure `settings.json` (see instructions in repository README), open the Zed Assistant panel, and select **Agent Browser DeepSeek (Web Free)** or **Agent Browser Qwen (Web Free)**.
 
 ## Architecture
 

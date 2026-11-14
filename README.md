@@ -1,7 +1,7 @@
 <div align="center">
 
 <a href="https://github.com/robyajo/agent-browser">
-<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=800&size=48&duration=3000&pause=1000&color=FACC15&center=true&vCenter=true&width=750&height=90&lines=Agent+Browser;+Snapgent+Connector;+Free+Web+AI+for+VS+Code+%26+Zed" alt="Agent Browser: Snapgent Connector for VS Code & Zed Editor" />
+<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=800&size=48&duration=3000&pause=1000&color=FACC15&center=true&vCenter=true&width=750&height=90&lines=Agent+Browser;+Free+Web+AI+for+VS+Code+%26+Zed" alt="Agent Browser for VS Code & Zed Editor" />
 </a>
 
 <p><b>Turn any AI chatbot browser (DeepSeek, Qwen, Claude, ChatGPT) into a powerful coding agent for VS Code & Zed Editor via MCP</b></p>
@@ -26,7 +26,7 @@
   > No API key · No subscription · 100% Free Web Models (DeepSeek & Qwen)
 ```
 
-**Agent Browser (Snapgent Connector)** connects your favorite browser-based AI chats (DeepSeek, Qwen, ChatGPT, Claude, Gemini, etc.) directly to your code editors: **VS Code** and **Zed Editor**.
+**Agent Browser** connects your favorite browser-based AI chats (DeepSeek, Qwen, ChatGPT, Claude, Gemini, etc.) directly to your code editors: **VS Code** and **Zed Editor**.
 
 Describe what you want in plain language — the agent reads, creates, and edits files, searches directory structures, and inspects errors directly inside your active workspace.
 
@@ -102,79 +102,79 @@ Add the `language_models` block:
       "available_models": [
         {
           "name": "web-ai",
-          "display_name": "Switch AI / Active Tab (Snapgent Free)",
+          "display_name": "Switch AI / Active Tab (Agent Browser Free)",
           "max_tokens": 64000,
           "supports_tools": true
         },
         {
           "name": "chatgpt-web",
-          "display_name": "ChatGPT Web (Snapgent Free)",
+          "display_name": "ChatGPT Web (Agent Browser Free)",
           "max_tokens": 64000,
           "supports_tools": true
         },
         {
           "name": "claude-web",
-          "display_name": "Claude Web (Snapgent Free)",
+          "display_name": "Claude Web (Agent Browser Free)",
           "max_tokens": 64000,
           "supports_tools": true
         },
         {
           "name": "gemini-web",
-          "display_name": "Gemini Web (Snapgent Free)",
+          "display_name": "Gemini Web (Agent Browser Free)",
           "max_tokens": 64000,
           "supports_tools": true
         },
         {
           "name": "meta-web",
-          "display_name": "Meta AI Web (Snapgent Free)",
+          "display_name": "Meta AI Web (Agent Browser Free)",
           "max_tokens": 64000,
           "supports_tools": true
         },
         {
           "name": "deepseek-web",
-          "display_name": "DeepSeek Web (Snapgent Free)",
+          "display_name": "DeepSeek Web (Agent Browser Free)",
           "max_tokens": 64000,
           "supports_tools": true
         },
         {
           "name": "qwen-web",
-          "display_name": "Qwen Web (Snapgent Free)",
+          "display_name": "Qwen Web (Agent Browser Free)",
           "max_tokens": 64000,
           "supports_tools": true
         },
         {
           "name": "mistral-web",
-          "display_name": "Mistral Web (Snapgent Free)",
+          "display_name": "Mistral Web (Agent Browser Free)",
           "max_tokens": 64000,
           "supports_tools": true
         },
         {
           "name": "grok-web",
-          "display_name": "Grok Web (Snapgent Free)",
+          "display_name": "Grok Web (Agent Browser Free)",
           "max_tokens": 64000,
           "supports_tools": true
         },
         {
           "name": "kimi-web",
-          "display_name": "Kimi Web (Snapgent Free)",
+          "display_name": "Kimi Web (Agent Browser Free)",
           "max_tokens": 64000,
           "supports_tools": true
         },
         {
           "name": "glm-web",
-          "display_name": "GLM Web (Snapgent Free)",
+          "display_name": "GLM Web (Agent Browser Free)",
           "max_tokens": 64000,
           "supports_tools": true
         },
         {
           "name": "ptero-web",
-          "display_name": "Ptero Web (Snapgent Free)",
+          "display_name": "Ptero Web (Agent Browser Free)",
           "max_tokens": 64000,
           "supports_tools": true
         },
         {
           "name": "arena-web",
-          "display_name": "Arena Web (Snapgent Free)",
+          "display_name": "Arena Web (Agent Browser Free)",
           "max_tokens": 64000,
           "supports_tools": true
         }
@@ -220,7 +220,7 @@ Add the `language_models` block:
 └────────────────────────────────┘                        │
                                                           ▼
 ┌───────────────────────────────┐     HTTP (OpenAI)    ┌───────────────────────────┐
-│          Zed Editor           │ ◀──────────────────▶ │  Snapgent Local Bridge    │
+│          Zed Editor           │ ◀──────────────────▶ │ Agent Browser Local Bridge│
 │  (Assistant / Agent Panel)    │      port 17614      │   • WebSocket: port 17613 │
 └───────────────────────────────┘                      │   • OpenAI Proxy: 17614   │
                                                        └─────────────▲─────────────┘

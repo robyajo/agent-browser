@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // core/main.js - the provider-agnostic agentic loop, UI and session state.
 // Drives any AI chat site through the ZSProvider interface (providers/*.js):
-// waits for the model's reply, parses snapgentV3 commands (ZSParse), asks the
+// waits for the model's reply, parses agent-browser commands (ZSParse), asks the
 // background worker to execute them on the Roblox MCP bridge, and feeds the
 // result back. Camouflages the system prompt ("Starting Up") and tool JSON
 // behind animated chips, masks injected input, and exposes a Stop button.
@@ -16,7 +16,7 @@
   const P = ZSProvider;
   const T = P.timings;
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-  const log = (...a) => console.log("[snapgentV3]", ...a);
+  const log = (...a) => console.log("[agent-browser]", ...a);
 
   // ── Anti-bot mitigation (EXPERIMENTAL) ──────────────────────────────────
   // Suspected contributor to Arena's captcha: the agentic loop sends turns
@@ -80,7 +80,7 @@
 
   // GitHub releases page - where users download the Bridge + start scripts.
   const GITHUB_URL = "https://github.com/robyajo/agent-browser";
-  // AI chat sites snapgentV3 works on. Keep in sync with manifest.json
+  // AI chat sites Agent Browser works on. Keep in sync with manifest.json
   // content_scripts and background.js PROVIDER_URLS when adding a provider.
   const AI_SITES = [
     // { name: "DeepSeek", url: "https://chat.deepseek.com/" }, // hidden from UI bar (disabled, not deleted)
@@ -120,7 +120,7 @@
         resolve();
       });
     } catch (error) {
-      console.warn("[snapgentV3] Could not load background-session setting:", error);
+      console.warn("[agent-browser] Could not load background-session setting:", error);
       resolve();
     }
   });
@@ -153,7 +153,7 @@
       }
     });
   } catch (error) {
-    console.warn("[snapgentV3] Could not load selected MCP target:", error);
+    console.warn("[agent-browser] Could not load selected MCP target:", error);
   }
 
   // ── MCP enable/disable toggles ──────────────────────────────────────────
@@ -172,7 +172,7 @@
       }
     });
   } catch (error) {
-    console.warn("[snapgentV3] Could not load MCP toggles:", error);
+    console.warn("[agent-browser] Could not load MCP toggles:", error);
   }
   function isMcpEnabled(id) {
     return mcpEnabled[id] !== false;
@@ -805,8 +805,8 @@
           return { kind: "parse_error", reason: "malformed", raw: r, item: d.item };
         }
       }
-      // The model answered in its OWN native tool-call markup instead of a
-      // snapgentV3 command - DeepSeek's DSML invoke/parameter tags (reported by
+      // The model answered in its OWN native tool-call markup instead of an
+      // agent-browser command - DeepSeek's DSML invoke/parameter tags (reported by
       // users, 2026-08; DeepSeek is the only provider seen doing it). It carries
       // no "command"/"tool" key and no ###...### markers, so hasToolSignature is
       // false and every guard below misses it too: the turn finalized as a
@@ -884,7 +884,7 @@
   // problems with opposite fixes: a bridge outage is fixed by start.bat and
   // resolves itself, while this one can ONLY be fixed by reloading the page and
   // never recovers on its own. Lumping them together (the old behaviour) told
-  // the model "the local snapgentV3 bridge is unreachable", which sent the user
+  // the model "the local Agent Browser bridge is unreachable", which sent the user
   // to check a bridge that was perfectly healthy. Diagnosed 2026-08-14 by the
   // giveaway timing: a genuine outage takes 8s (background.js `send` waits via
   // waitForConnection first), an invalidated context comes back in ~1ms.
@@ -1041,7 +1041,7 @@
       }
       return `ERROR: the '${bareName}' command timed out and is unavailable in this environment. Do NOT call it again - complete the task yourself using the other commands (execute_luau, multi_edit, etc.).`;
     }
-    // Virtual command: list the MCP server(s) snapgentV3 is currently connected
+    // Virtual command: list the MCP server(s) Agent Browser is currently connected
     // to, with each one's REAL per-server health (from the bridge, never the
     // merged tool count - a dead server must not borrow another's numbers).
     if (name === "list_mcp_servers") {
@@ -1073,7 +1073,7 @@
       const isTargetMatch = !asked || asked === target ||
         ((target === "zededitor" || target === "zed") && (asked === "zededitor" || asked === "zed" || name.startsWith("zed")));
       if (!isTargetMatch) {
-        return `Output of '${name}':\nERROR: server "${asked}" is not available. Only the selected target "${target}" can be used in this session. Do NOT try other servers; ask the user to switch the target in the snapgentV3 selector if needed.`;
+        return `Output of '${name}':\nERROR: server "${asked}" is not available. Only the selected target "${target}" can be used in this session. Do NOT try other servers; ask the user to switch the target in the Agent Browser selector if needed.`;
       }
       const requested = target;
       if (!isMcpEnabled(requested)) {
@@ -1082,7 +1082,7 @@
       const scoped = activeTools();
       if (!A.toolList.length) return `Output of '${name}':\nNo commands available - the bridge or selected MCP server may be offline.`;
       if (!scoped.length) {
-        return `Output of '${name}':\nERROR: the selected server "${requested}" has no commands available (it may be offline). Do NOT try other servers; tell the user to check the target in the snapgentV3 selector.`;
+        return `Output of '${name}':\nERROR: the selected server "${requested}" has no commands available (it may be offline). Do NOT try other servers; tell the user to check the target in the Agent Browser selector.`;
       }
       const lines = scoped.map((t) => {
         const props = (t.inputSchema && t.inputSchema.properties) || {};
@@ -1169,7 +1169,7 @@
         return `ERROR: '${bareName}' returned an image, but this assistant cannot see images. Do NOT call it again. Use a different command to get the information as text instead.`;
       }
       if (r.images && r.images.length) {
-        // Show the capture in a left-hand snapgentV3 popup (from the in-memory
+        // Show the capture in a left-hand Agent Browser popup (from the in-memory
         // base64 - simple and reliable on every site; no DOM-embedded preview).
         ui.showImages(r.images, name);
         // Do NOT attach the image here: submitAndGetBase/typeAndSend types the
@@ -1748,7 +1748,7 @@
   // The full system prompt for the CURRENT provider and user settings. One
   // definition, used both by the bootstrap and by the periodic re-injection, so
   // the two can never drift apart.
-  // Skills found in the workspace (.snapgent/skills/<name>/SKILL.md), as
+  // Skills found in the workspace (.agent-browser/skills/<name>/SKILL.md), as
   // [{ name, description, path }]. Filled by the skills loader; empty = feature off.
   let workspaceSkills = [];
   // Every skill found on disk (enabled or not), for the Skills settings popup.
@@ -1762,7 +1762,7 @@
       if (saved && typeof saved === "object" && !Array.isArray(saved)) skillsEnabled = saved;
     });
   } catch (error) {
-    console.warn("[snapgentV3] Could not load skill toggles:", error);
+    console.warn("[agent-browser] Could not load skill toggles:", error);
   }
   function isSkillEnabled(name) {
     return skillsEnabled[name] !== false;
@@ -1858,7 +1858,7 @@
       if (saved && typeof saved === "object" && !Array.isArray(saved)) globalSkills = saved;
     });
   } catch (error) {
-    console.warn("[snapgentV3] Could not load global skills:", error);
+    console.warn("[agent-browser] Could not load global skills:", error);
   }
   function persistGlobalSkills() {
     try { chrome.storage.local.set({ [GLOBAL_SKILLS_KEY]: globalSkills }); } catch {}
@@ -2029,10 +2029,10 @@
     const rider =
       "\n\n────────────────────────────────\n" +
       ZS.RESEND_MARKER + "\n" +
-      "(System note from snapgentV3 - an automatic re-statement of your operating " +
+      "(System note from Agent Browser - an automatic re-statement of your operating " +
       "instructions, NOT a new request and NOT something to reply to. This conversation " +
       "may have been summarised, which drops the part explaining how you actually run " +
-      "commands. To be explicit: the snapgentV3 extension IS running in this page right " +
+      "commands. To be explicit: the Agent Browser extension IS running in this page right " +
       "now, it DOES read your replies, and the commands below DO execute for real - the " +
       "results you have been receiving are proof of it. Keep using them exactly as " +
       "described. Just carry on with the task; do not acknowledge this note.)\n" +
@@ -2494,7 +2494,7 @@
       }
 
       // 3. Assistant command turns → live loading while streaming, ✓ when done.
-      // ONLY in a real snapgentV3 session (started or bootstrapping). Without
+      // ONLY in a real Agent Browser session (started or bootstrapping). Without
       // this gate, a plain never-started chat where the model merely EXPLAINS
       // the command format (a {"command":...} example in its answer) got the
       // example MASKED behind a tool chip - hiding genuine content the user
@@ -2891,7 +2891,7 @@
         try {
           chrome.storage.local.set({ [TARGET_STORAGE_KEY]: selectedTargetId }, reloadPage);
         } catch (error) {
-          console.error("[snapgentV3] Could not save selected MCP target:", error);
+          console.error("[agent-browser] Could not save selected MCP target:", error);
           reloadPage();
         }
       });
@@ -3339,7 +3339,7 @@
           : `<button class="zs-site-opt" data-u="${s.url}">${label}<span class="zs-site-go">&rarr;</span></button>`;
       }
       menuEl.innerHTML =
-        `<div class="zs-menu-head"><span class="zs-menu-logo">snapgentV3</span></div>
+        `<div class="zs-menu-head"><span class="zs-menu-logo">Agent Browser</span></div>
          <section class="zs-menu-sec">
            <div class="zs-sec-label zs-sec-label-row"><span>Switch AI</span><span><button id="zs-zed-help" class="zs-gear" title="Zed Editor Setup Guide" aria-label="Zed Setup">&#9432;</button><button id="zs-skills-settings" class="zs-gear" title="Skills" aria-label="Skills">&#9733;</button><button id="zs-mcp-settings" class="zs-gear" title="MCP settings" aria-label="MCP settings">&#9881;</button></span></div>
            <div class="zs-site-grid">${sites}</div>
@@ -3368,7 +3368,7 @@
       setupCard.id = "zs-setup";
       setupCard.hidden = true;
       setupCard.innerHTML =
-        `<div id="zs-setup-head"><span id="zs-setup-logo">snapgentV3</span><span id="zs-setup-tag">Setup</span></div>` +
+        `<div id="zs-setup-head"><span id="zs-setup-logo">Agent Browser</span><span id="zs-setup-tag">Setup</span></div>` +
         `<div id="zs-setup-sub">3 quick steps.</div>` +
         `<ol id="zs-setup-steps">` +
           `<li>Open <b>Settings</b></li>` +
@@ -3420,7 +3420,7 @@
     function refreshSetup(bridgeConnected) {
       if (setupSeen || bridgeConnected) { hideSetup(); return; }
       // Bridge is down, but if the user is just READING an existing
-      // conversation with no snapgentV3 session (the "No agent here" state),
+      // conversation with no Agent Browser session (the "No agent here" state),
       // a "bridge down" onboarding popup is pure noise - they may not want an
       // agent here at all (user request). Keep it for the states where the
       // bridge actually matters: a fresh/empty chat (the Start affordance is
@@ -3605,7 +3605,7 @@
           });
         }).catch((error) => {
           workspaceReady = false;
-          console.warn(`[snapgentV3] Could not verify ${selectedTargetId} workspace:`, error);
+          console.warn(`[agent-browser] Could not verify ${selectedTargetId} workspace:`, error);
         }).finally(() => {
           workspaceProbePending = false;
           renderBar();
@@ -3642,7 +3642,7 @@
       const b = document.createElement("div");
       b.className = "zs-banner limit zs-stale";
       b.innerHTML = `<div class="zs-banner-t">⚠ Reload page</div>
-        <div class="zs-banner-m">snapgentV3 was updated. Reload this page to continue.</div>
+        <div class="zs-banner-m">Agent Browser was updated. Reload this page to continue.</div>
         <div class="zs-banner-acts"><button class="zs-banner-reload">Reload page</button></div>`;
       b.querySelector(".zs-banner-reload").addEventListener("click", () => location.reload());
       root.appendChild(b);
@@ -3658,7 +3658,7 @@
       if (bridgeBannerEl) return; // already shown
       const b = document.createElement("div");
       b.className = "zs-banner limit";
-      b.innerHTML = `<div class="zs-banner-t">⚠ snapgentV3 disconnected</div>
+      b.innerHTML = `<div class="zs-banner-t">⚠ Agent Browser disconnected</div>
         <div class="zs-banner-m">Bridge stopped. Run start.bat and keep Roblox Studio open.</div>
         <div class="zs-banner-acts"><button class="zs-banner-x">Close</button></div>`;
       b.querySelector(".zs-banner-x").addEventListener("click", () => { b.remove(); if (bridgeBannerEl === b) bridgeBannerEl = null; });
@@ -4147,7 +4147,7 @@
       root.appendChild(b);
     }
 
-    // Left-hand snapgentV3 popup showing the latest screen_capture. Fed from the
+    // Left-hand Agent Browser popup showing the latest screen_capture. Fed from the
     // in-memory base64 (a data: URL always renders), so it works identically on
     // every provider and never touches the site's DOM. Only the most recent
     // capture is kept - a new one replaces the old.
@@ -4225,7 +4225,7 @@
   }
 
   // Timestamp of the user's last REAL click on the site (trusted event, outside
-  // snapgentV3's own UI). A genuine "regenerate ↻" is always such a click;
+  // Agent Browser's own UI). A genuine "regenerate ↻" is always such a click;
   // DeepSeek's post-stop phantom generations and stop-button re-mount flickers
   // never are - this is what tells them apart (seen live: two false regenResume
   // fired 8s/2s after a Stop with no user action, un-stopping the halted turn).
@@ -4356,7 +4356,7 @@
     // - stopLoop both halts our loop AND clicks the site's native stop - and the
     // site's native stop likewise halts our loop via onNativeStop, so either one
     // fully stops everything. Two stop buttons at once is fine.
-    // The bare isHardGenerating() term is gated on a live snapgentV3 session: on
+    // The bare isHardGenerating() term is gated on a live Agent Browser session: on
     // a plain chat with no session, a user's own message makes the site generate,
     // and we must NOT briefly flash our Stop button over that.
     // Self-heal a stuck "Stopping…": if we flagged stopping but nothing is
@@ -4559,9 +4559,9 @@
       }
     });
   } catch {}
-  // A conversation IS a snapgentV3 session if any rendered turn carries a
+  // A conversation IS an Agent Browser session if any rendered turn carries a
   // telltale artefact: the system-prompt marker, an injected tool-result /
-  // system-note turn, or a snapgentV3 command an assistant wrote. Works even
+  // system-note turn, or an Agent Browser command an assistant wrote. Works even
   // after a full cold start and regardless of scroll position.
   function domHasZsSignal() {
     for (const it of P.allItems()) {
@@ -4611,7 +4611,7 @@
       }
     }
     // Same idea for a RUNNING loop: if the user opens a NEW, empty conversation
-    // via the SITE's own new-chat (not snapgentV3's button), the loop is bound to
+    // via the SITE's own new-chat (not Agent Browser's button), the loop is bound to
     // a chat the user left, so abandon it. Otherwise A.running keeps this function
     // early-returning below and the stale "Agent active" / Stop button lingers on
     // the fresh chat instead of "Start Roblox agent". The "/app" → "/app/<id>" id
@@ -4886,5 +4886,5 @@
     }
   }, 5000);
 
-  log(`snapgentV3 content script ready (provider: ${P.id})`);
+  log(`Agent Browser content script ready (provider: ${P.id})`);
 })();
