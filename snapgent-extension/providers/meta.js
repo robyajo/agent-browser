@@ -684,6 +684,8 @@ const ZSProvider = (() => {
       } catch (e) { diag("meta.tas.attachErr", { msg: String((e && e.message) || e) }); }
     }
 
+    dismissDiscardPromptModal();
+
     const editor = writeEl();
     const vis = visibleEditor();
     if (!editor && !vis) throw new Error("Meta AI input box not found");
@@ -846,8 +848,37 @@ const ZSProvider = (() => {
   }
 
   // ── Composer readiness ──────────────────────────────────────────────────────
-  function enforceComposer() { if (_locked) applyLock(); return { ready: true }; }
+  function dismissDiscardPromptModal() {
+    try {
+      for (const d of document.querySelectorAll('[role="dialog"]')) {
+        if (d.closest && d.closest("#zs-root")) continue;
+        const text = (d.textContent || "").toLowerCase();
+        if (text.includes("discard prompt") || text.includes("your message will be lost")) {
+          const buttons = [...d.querySelectorAll("button")];
+          const discardBtn = buttons.find((b) => {
+            const t = (b.textContent || "").trim().toLowerCase();
+            const aria = (b.getAttribute("aria-label") || "").toLowerCase();
+            const testid = (b.getAttribute("data-testid") || "").toLowerCase();
+            return t.includes("discard") || aria.includes("discard") || testid.includes("discard") ||
+                   t.includes("buang") || t.includes("abandonner") || t.includes("delete");
+          });
+          if (discardBtn) {
+            try { discardBtn.click(); } catch {}
+            return true;
+          }
+        }
+      }
+    } catch {}
+    return false;
+  }
+
+  function enforceComposer() {
+    dismissDiscardPromptModal();
+    if (_locked) applyLock();
+    return { ready: true };
+  }
   async function ensureComposerReady(reason) {
+    dismissDiscardPromptModal();
     // Force Réflexion before the session runs (Instantané is much weaker). Fire and
     // forget - readiness never blocks on it (the mode flip is best-effort).
     ensureThinkMode();
@@ -857,8 +888,11 @@ const ZSProvider = (() => {
   const modeWarning = () => "";
   const captchaPresent = () => false;
   function overlayBlocking() {
+    if (dismissDiscardPromptModal()) return false;
     for (const d of document.querySelectorAll('[role="dialog"]')) {
-      if (d.closest("#zs-root")) continue;
+      if (d.closest && d.closest("#zs-root")) continue;
+      const text = (d.textContent || "").toLowerCase();
+      if (text.includes("discard prompt") || text.includes("your message will be lost")) continue;
       const r = d.getBoundingClientRect();
       if (r.width > 40 && r.height > 40 && r.top < innerHeight && r.bottom > 0) return true;
     }
