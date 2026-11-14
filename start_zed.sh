@@ -25,7 +25,7 @@ log() {
 
 echo -e "${CYAN}${BOLD}"
 echo "  ========================================================"
-echo "    ⚡ Snapgent Connector for Zed Editor (Linux)"
+echo "    ⚡ Snapgent Connector for Zed Editor (Linux & macOS)"
 echo "    Support: DeepSeek, Qwen, Claude, ChatGPT -> Zed Editor"
 echo "  ========================================================"
 echo -e "${NC}"

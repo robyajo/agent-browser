@@ -1,67 +1,70 @@
 @echo off
 setlocal enabledelayedexpansion
 chcp 65001 >nul
-title Snapgent Bridge
+title Snapgent Bridge (VS Code & Zed Editor)
 cd /d "%~dp0"
 
 if not exist "%~dp0logs" mkdir "%~dp0logs" >nul 2>nul
 set "LOGFILE=%~dp0logs\start.log"
 
-if not exist "%~dp0bridge.exe" (
-    echo.
-    echo   ERROR: bridge.exe not found next to start.bat.
-    echo   Extract the whole download, then run start.bat from that folder.
-    echo.
-    pause
-    exit /b 1
+REM Check for Python 3
+set "PY="
+where python >nul 2>nul
+if %errorlevel% equ 0 (
+    python -c "import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)" >nul 2>nul
+    if !errorlevel! equ 0 set "PY=python"
+)
+if not defined PY (
+    where py >nul 2>nul
+    if !errorlevel! equ 0 (
+        py -3 -c "import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)" >nul 2>nul
+        if !errorlevel! equ 0 set "PY=py -3"
+    )
 )
 
-echo.
-echo   Configuring VS Code MCP and detecting Roblox Studio...
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup-config.ps1"
-if errorlevel 1 (
+if defined PY (
     echo.
-    echo   ERROR: Could not configure the VS Code MCP connection.
-    echo   Check the message above, then run start.bat again.
+    echo   Configuring MCP servers (VS Code ^& Zed Editor)...
+    %PY% "%~dp0setup-config.py"
     echo.
-    pause
-    exit /b 1
+    %PY% -c "import websockets" >nul 2>nul
+    if !errorlevel! neq 0 (
+        echo   Installing websockets...
+        %PY% -m pip install websockets
+    )
+) else (
+    echo.
+    echo   Configuring MCP servers...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup-config.ps1"
 )
 
-if exist "%~dp0start-effectcraft.ps1" (
-    echo.
-    echo   Checking EffectCraft control channel...
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0start-effectcraft.ps1"
-)
-
-REM Free the bridge port if a previous instance is still listening.
-set "OLDPID="
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :17613 ^| findstr LISTENING 2^>nul') do (
-    set "OLDPID=%%a"
-)
-if defined OLDPID (
-    echo   Replacing previous bridge ^(pid !OLDPID!^) on port 17613...
-    taskkill /F /T /PID !OLDPID! >nul 2>nul
-    timeout /t 1 /nobreak >nul
+REM Free bridge ports 17613 and 17614
+for %%P in (17613 17614) do (
+    for /f "tokens=5" %%a in ('netstat -aon ^| findstr :%%P ^| findstr LISTENING 2^>nul') do (
+        echo   Replacing previous bridge (PID %%a) on port %%P...
+        taskkill /F /T /PID %%a >nul 2>nul
+        timeout /t 1 /nobreak >nul
+    )
 )
 
 echo.
 echo   +--------------------------------------------------+
 echo   ^| Snapgent is now running.                         ^|
+echo   ^| Target Editors: VS Code and Zed Editor           ^|
 echo   ^| Keep this window open while you use the agent.   ^|
-echo   ^| Minimise it freely - closing it stops the bridge.^|
 echo   +--------------------------------------------------+
 echo.
 
-"%~dp0bridge.exe"
-set "BRIDGE_EXIT=%errorlevel%"
-
-echo.
-if not "%BRIDGE_EXIT%"=="0" (
-    echo   Bridge stopped with ERROR code %BRIDGE_EXIT%.
+if defined PY (
+    %PY% "%~dp0bridge.py"
 ) else (
-    echo   Bridge stopped normally.
+    if exist "%~dp0bridge.exe" (
+        "%~dp0bridge.exe"
+    ) else (
+        echo ERROR: Neither Python 3 nor bridge.exe was found.
+        pause
+        exit /b 1
+    )
 )
-echo   Press any key to close.
-pause >nul
-exit /b 0
+
+pause

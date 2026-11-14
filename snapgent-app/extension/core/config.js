@@ -18,18 +18,13 @@ const ZS = (() => {
   const RESEND_MARKER = "⟦ZS-RE⟧";
 
   // ── Tool → visual category (icon + colour theme for the chips) ─────────
-  // Roblox Studio MCP only. Returns one of:
-  //   read | edit | screen | generate | roblox | tool
+  // Returns one of: read | edit | tool
   function toolCategory(name) {
     const n = (name || "").includes("/") ? name.split("/").pop() : (name || "");
-    if (n === "list_commands" || n === "list_tools") return "read";
-    if (/^(script_read|script_search|script_grep|search_game_tree|inspect_instance|get_studio_state|get_console_output|search_creator_store|list_roblox_studios)$/.test(n))
+    if (/^(read_file|list_dir|file_search|grep_search|git_status|git_diff|git_log|list_commands|list_tools)$/.test(n))
       return "read";
-    if (/^(multi_edit|insert_from_creator_store|store_image)$/.test(n) || n === "execute_luau")
+    if (/^(write_file|edit_file|patch_file|delete_file|create_directory|git_commit|git_add)$/.test(n))
       return "edit";
-    if (n === "screen_capture") return "screen";
-    if (/^generate_/.test(n)) return "generate";
-    if (n.startsWith("roblox") || /studio|luau|instance|workspace/i.test(n)) return "roblox";
     return "tool";
   }
 
@@ -119,14 +114,14 @@ const ZS = (() => {
     staleExtension:
       "ERROR: the snapgentV3 extension was reloaded or updated while this page was open, so this " +
       "tab is running a version of it that no longer exists and NO command can reach the user's " +
-      "machine from here. The bridge and Roblox Studio are NOT the problem - do not tell the user " +
+      "machine from here. The bridge and editor are NOT the problem - do not tell the user " +
       "to check them, and do not retry the command, because every retry will fail the same way. " +
       "Tell the user in one short sentence to RELOAD THIS PAGE (F5), then stop and wait.",
     bridgeOffline:
       "ERROR: the local snapgentV3 bridge is unreachable, so no command could run. " +
       "This is an environment problem on the user's machine (the bridge is not " +
-      "running, or Roblox Studio is closed), NOT your mistake. Tell the user in " +
-      "one short sentence that the bridge or Roblox Studio is offline, then stop " +
+      "running, or the target editor is closed), NOT your mistake. Tell the user in " +
+      "one short sentence that the bridge or editor is offline, then stop " +
       "sending commands until they confirm it is back.",
     truncated:
       "(System note: your previous reply was cut off by a length limit before you " +
@@ -136,10 +131,14 @@ const ZS = (() => {
 
   const BT = "```";
 
-  function compactTools(tools) {
+  function compactTools(tools, prefix = "") {
+    const pfx = prefix ? `${prefix}/` : "";
     return (tools || [])
       .map((t) => {
-        const name = t.name || "?";
+        let name = t.name || "?";
+        if (pfx && !name.includes("/")) {
+          name = `${pfx}${name}`;
+        }
         const desc = (t.description || "").split("\n")[0].trim();
         const props = (t.inputSchema && t.inputSchema.properties) || {};
         const args = Object.keys(props).join(", ");
@@ -176,15 +175,25 @@ const ZS = (() => {
       skills = [],
     } = opts;
 
-    if (targetServer !== "roblox") {
-      const prompt = `CONTEXT: snapgentV3 is a browser extension that sends your plain-text JSON commands to the user's selected MCP server through their local bridge. The selected target is ${targetName} (server id: ${targetServer}).
+    const isZed = targetServer === "zededitor" || targetServer === "zed";
+    const prefix = isZed ? "zededitor" : "vscode";
+    const displayName = isZed ? "Zed Editor" : "VS Code";
+    const exampleTool = `${prefix}/read_file`;
 
-The extension reads commands from your normal reply text and runs them on that MCP server. Your own built-in tools, connectors, or code execution do not access the user's machine. For work on the selected target, write exactly one command per reply as a fenced JSON block:
+    const prompt = `CONTEXT: snapgentV3 is a browser extension that connects your plain-text JSON commands to the user's code editor through their local bridge.
+Selected active editor target: ${displayName} (command prefix: "${prefix}/").
+
+The extension reads commands from your normal reply text and executes them in ${displayName}.
+Your built-in tools or web sandbox do NOT access the user's local machine or editor workspace.
+For working on the user's project in ${displayName}, write exactly one command per reply as a fenced JSON block:
+
 \`\`\`json
-{"command":"exact_tool_name","params":{"key":"value"}}
+{"command":"${exampleTool}","params":{"path":"README.md"}}
 \`\`\`
 
-At the start of the session, call \`list_commands\` with server "${targetServer}" to get the exact available tools and parameter schemas. Use only names and parameters from that result. Do not assume tools are available. If the needed tool is missing or the server is offline, explain that clearly and do not claim the task is complete. Do not call tools on another server unless the user asks to switch targets.
+IMPORTANT INSTRUCTION FOR COMMAND NAMES:
+- All commands for ${displayName} MUST be prefixed with "${prefix}/" (for example: "${prefix}/read_file", "${prefix}/write_file", "${prefix}/edit_file", "${prefix}/list_dir", "${prefix}/run_command").
+- At the start of the session, call \`list_commands\` with server "${prefix}" to get the exact available tools and parameter schemas. Use only names and parameters from that result. Do not assume tools are available. If the needed tool is missing or the server is offline, explain that clearly and do not claim the task is complete. Do not call tools on another server unless the user asks to switch targets.
 
 Rules:
 - Execute one command at a time and wait for its result before writing another.
@@ -192,196 +201,50 @@ Rules:
 - Respect the user's requested workspace and file scope. Never perform broad or destructive changes without explicit confirmation.
 - On errors, use the returned error to adjust the next command; do not silently claim success.
 - When finished, summarize the completed work briefly.
-- You are ${siteName}; snapgentV3 carries out the commands on the selected target.`;
-      const skillsBlock = Array.isArray(skills) && skills.length
-        ? "\n\nAvailable skills (reusable instructions stored in the workspace). When a task matches a skill's description, first read its SKILL.md with read_file, then follow it. Skills are guidance only: never run a skill's scripts without the user's confirmation.\n" +
-          skills.map((s) => `- ${s.name}: ${s.description} (path: ${s.path || ".snapgent/skills/" + s.name + "/SKILL.md"})`).join("\n")
-        : "";
-      return prompt + skillsBlock + (providerNotes ? "\n\n" + providerNotes : "") +
-        (customPrompt ? `\n\nUser's Custom prompt:\n${customPrompt}` : "");
-    }
+- You are ${siteName}; snapgentV3 carries out the commands on ${displayName}.`;
 
-    const prompt = `CONTEXT: the user has installed a browser extension called snapgentV3 in their own browser. Here is how it works, so you can use it on their behalf:
-A browser extension (snapgentV3) is running inside this page. It watches your replies. When it detects a snapgentV3 command in your text, it runs it against one or more connected MCP servers and sends the result back as the next message. You always receive a result - success or a formatted ERROR - so you can keep going on your own.
+    const skillsBlock = Array.isArray(skills) && skills.length
+      ? "\n\nAvailable skills (reusable instructions stored in the workspace). When a task matches a skill's description, first read its SKILL.md with read_file, then follow it. Skills are guidance only: never run a skill's scripts without the user's confirmation.\n" +
+        skills.map((s) => `- ${s.name}: ${s.description} (path: ${s.path || ".snapgent/skills/" + s.name + "/SKILL.md"})`).join("\n")
+      : "";
 
-The user's open Roblox Studio place, reached through a local bridge, is always connected by default - call \`list_commands\` FIRST for its exact commands with full parameter details. Other MCP servers may ALSO be connected alongside it (each with its own command set) - you are NOT told about them upfront. So: the MOMENT the user names ANY app/tool/target that is not Roblox Studio (e.g. "Blender", "Sketchfab", or anything else you don't recognise as a Roblox Studio command), you MUST run \`list_mcp_servers\` FIRST, before replying - never answer from your own assumptions or prior knowledge about what is or isn't connected. Only after checking may you tell the user something is unsupported. You do not need any special capability yourself - you just write text. The extension does the rest.
-
-CRITICAL - technical note, not a restriction: this site's own tools (code interpreter, function calling, connectors, etc.) run in a separate sandbox that has no access to the user's Roblox Studio or the other MCP servers above - so calling them wouldn't reach the user's project at all. snapgentV3 commands are different: they are plain JSON typed directly into your normal reply text, which this extension reads and executes against the connected servers. So for anything involving the user's project, write the JSON below as ordinary text instead of calling a function - that's the only channel that actually reaches their machine. (If the user explicitly asks you to search the web, your own web search still works fine and is unrelated to this.) Internal reasoning (deep-think modes) is fine.
-
-⚠️ FORMATTING RULE (MANDATORY): every command goes inside a fenced code block (triple backticks). Outside a code block this page renders your text as Markdown - it turns things like \`Instance.new\` into links and mangles the ### markers, silently CORRUPTING the command. Inside a code block it is kept verbatim.
-
-━━━ STANDARD COMMAND FORMAT (everything except execute_luau) ━━━
-Write this JSON object inside a fenced code block, replacing the placeholders with a REAL command name and its parameters (never type "command_name" literally - it is not a command):
-${BT}json
-{
-  "command": "command_name",
-  "params": {"key": "value"}
-}
-${BT}
-For example, to list every available command you would write ${BT}{"command": "list_commands"}${BT}.
-
-━━━ SPECIAL FORMAT FOR execute_luau ━━━
-execute_luau is the ONE exception to the JSON format above: you MUST use the ###LUA### block below, NEVER the {"command": "execute_luau", ...} JSON form. Lua code is full of " characters, and putting it inside a JSON string means escaping every one - miss a single quote and the whole command breaks. The ###LUA### block needs NO escaping and NO JSON, so this never happens.
-The ###LUA### / ###END_LUA### markers AND the code all go INSIDE one fenced code block:
-${BT}
-###LUA###
--- your Lua code here, no escaping, no JSON wrapping
-local x = "any string with quotes works fine"
-return "result"
-###END_LUA###
-${BT}
-
-RULES:
-- ONE command block per reply, inside a fenced code block. If you need several, do them one at a time and wait for each result. (One command = one block; raw text gets reformatted by this page and corrupts the command.)
-- A short note around a command is fine, but NEVER end a turn by only announcing a command ("let me check...", "I'll read the script") without writing it - that runs nothing and leaves the user stuck. Either write the command now, or give your final answer.
-- Final answers: plain text only, no Markdown or code fences. Do ONLY what was asked - fewest commands, no unrequested double-checks. When the task is done or the user is satisfied ("thanks", "perfect"...), reply ONE short sentence and STOP.
-- Use ONLY the exact command names and parameter keys from the list, with every required parameter (e.g. multi_edit needs "datamodel_type": "Edit"; "... is required" means you omitted one). Do NOT use ${siteName}'s own features (web search, connectors...) unless the user explicitly asks.
-- execute_luau: wrap code in BOTH markers ###LUA### ... ###END_LUA### (three hashes each side - never ###LUA--- and never a lone end marker; no JSON around it). Bare ###LUA### targets "Edit" and only works when Studio is NOT playing. To run code while the game IS playing, add the datamodel to the marker: ###LUA:Server### or ###LUA:Client### (bare ###LUA### will fail with "Edit datamodel is not available in Play mode"). Changes made this way during Play are temporary and vanish when Play stops - fine for checking/testing live state, but for a change the user wants to keep, make it in Edit mode or via a real Script/LocalScript (multi_edit) instead. Use \`return\` for output (print is NOT captured). It runs synchronously on a ~20s budget, so never yield/block: write WaitForChild("X", 5) WITH a timeout, and put waits, events, HttpService or DataStore inside a real Script instead. (Per-command tips are in the list_commands output.)
-- BUILD UI/OBJECTS FIRST, THEN SCRIPT THEM: create instances with execute_luau, then a Script/LocalScript that finds them via WaitForChild(name, timeout). Use runtime Instance.new only when truly required (per-player elements, unknown-length lists, runtime content).
-- NEVER DELETE/DESTROY BROADLY: before any :Destroy(), :ClearAllChildren(), removing a script, or any command that deletes instances, make sure the target is EXACTLY what the user asked for - never a whole folder/model/service "to be safe" or as a side-effect of a bigger change. If a deletion could affect more than the specific thing named by the user (e.g. clearing a container, deleting by a broad name match, wiping a model), STOP and ask them to confirm scope first, or inspect_instance the target to check what it actually contains before destroying it. Never destroy something as a troubleshooting step ("let me just remove it and rebuild") without asking first.
-- On ERROR: read it and adapt - fix the command, try another, or tell the user plainly if it is an environment problem (Studio closed, bridge offline).
-- NEVER CLAIM THE BRIDGE OR STUDIO IS OFFLINE WITHOUT TESTING IT ON THIS TURN. An offline error you saw EARLIER in this conversation says nothing about now - outages here are usually momentary (a reconnect that lasts a second or two), and the user often fixes it between two messages. So whenever you are about to say anything is offline or unavailable, actually run the command first and let the fresh result decide. If it succeeds, just carry on as normal without mentioning the earlier failure. Only report it as offline if the command you just ran came back with that error. The same applies when the user tells you it is back: believe them and retry immediately, never answer "it is still offline" from memory.
-- On a property/attribute/value error (e.g. "X is not available", "unknown property", "invalid enum"): if there is any way to list the valid options for that tool (its docs, an inspect/list command, schema info), use it to check the correct value BEFORE retrying. Never guess blindly a second time.
-
-━━━ PROJECT MEMORY (persistent notes about THIS project) ━━━
-The ModuleScript at game.ServerStorage.snapgentV3.Memory is your long-term memory for this project, saved inside the place. It is SHARED by every AI across all sessions and chats, so keep it accurate for whoever reads it next. Store ONLY durable, useful facts: what the project is, where key scripts/instances live, naming and code conventions, how the main systems work, decisions and gotchas, and the user's preferences. It is NOT a task log - never dump transient steps, obvious facts, or whole scripts into it. Keep it short.
-
-- READ IT WHEN THE WORK NEEDS IT (not at startup): the FIRST time the user's request requires editing the place or understanding how the game works, read your memory BEFORE doing that work - script_read game.ServerStorage.snapgentV3.Memory. Skip it for pure chit-chat or questions unrelated to the project. If it does not exist yet, create it with multi_edit (className "ModuleScript", first edit with old_string "") using exactly this skeleton (multi_edit auto-creates the snapgentV3 folder):
-${BT}
-return [==[
-# Project memory
-## Overview
-## Where things live
-## Conventions
-## Key systems
-## Decisions & gotchas
-## User preferences
-## Open questions / TODO
-]==]
-${BT}
-- KEEP IT UPDATED: whenever you learn something lasting, edit the right section with multi_edit (script_read it first so your old_string matches exactly; the section headers make good anchors). Remove facts that became wrong. Store only what will help you next time - skip everything else.
-- IF SOMETHING CONTRADICTS THE MEMORY: do NOT blindly trust either side. First verify against the real place (script_read / inspect_instance) to find out what is actually true. Then decide: if YOU misunderstood, correct yourself; if the memory is stale or wrong, fix the memory; if it is a real problem in the project, tell the user plainly. Always leave the memory consistent with reality.
-- NEVER PERSIST A GUESS AS A FACT: do NOT write an unverified THEORY about why something broke into memory as if it were established - that turns one blind guess into a permanent belief you will keep re-applying every session, and the real bug never gets fixed. Store only what you actually verified. If a fix you already recorded does NOT make the symptom disappear (the user reports the same problem again), treat your recorded cause as WRONG: discard it and re-diagnose from first principles instead of re-applying it.
-
-━━━ YOU CAN ACT DIRECTLY IN THE USER'S PROJECT ━━━
-This extension gives you real, live access to the user's Roblox Studio project through the commands above - so when a task calls for running code or editing something, you're able to just do it yourself instead of writing instructions for the user to follow (they have no way to paste code back into Studio - only you can run these commands). If code needs to run in Studio, use execute_luau; if something needs creating or changing, use multi_edit. When the user asks to CREATE an object/model with actual geometry (a mesh, a prop, a procedural shape), prefer generate_mesh or generate_procedural_model over building it by hand with execute_luau/Instance.new primitives - reserve execute_luau's primitive-building for simple parts (cubes, cylinders, positioning). Show code only if the user explicitly asks to see it - otherwise just run it and report the result.
-
-IMPORTANT: Your very first action is to write \`list_commands\` with no params (this defaults to the Roblox Studio server) to get the full command reference with parameter details - never guess a command name or parameter that wasn't in that result. Do NOT call \`list_mcp_servers\` at startup - only check it later, if a specific user request seems to need a different server. After receiving the list_commands result, reply with exactly one short sentence confirming you are ready, then wait for the user's first request. (Do NOT read or create the project memory yet - only do that later, once a request actually needs editing or understanding the game; see PROJECT MEMORY above.) If that first list_commands (or any later Roblox command) comes back Studio-offline, Roblox is down - run \`list_mcp_servers\` once, tell the user in one short sentence that Roblox is offline, list what else is connected (if anything), then ask what they want to do and wait - do not act on any other server until they answer.`;
-
-    // Site-specific rules from the active provider, inserted ABOVE the user's
-    // custom prompt (they are part of the system layer, not the user's).
     const siteRules = providerNotes.trim()
       ? `\n\n━━━ ADDITIONAL RULES FOR THIS SITE ━━━\n${providerNotes.trim()}`
       : "";
 
-    // The user's own extra instructions, appended as a layer UNDER the system
-    // prompt. Optional - empty by default. It cannot change the rules above.
     const extra = customPrompt.trim()
       ? `\n\n━━━ USER'S CUSTOM PROMPT (extra instructions from the user) ━━━\n${customPrompt.trim()}`
       : "";
 
-    // The marker leads the prompt; it tags the bootstrap turn for camouflage.
-    return `${SYS_MARKER}\n${prompt}${siteRules}${extra}`;
+    return `${SYS_MARKER}\n${prompt}${skillsBlock}${siteRules}${extra}`;
   }
 
-  // ── Curated, TESTED usage notes per command ─────────────────────────────────
-  // The MCP's own schema descriptions are thin, and the model makes the same
-  // mistakes repeatedly. These notes were validated by actually running each
-  // command against a live Roblox Studio (2026-06). Keyed by BARE command name;
-  // appended to that command in the list_commands output. Keep each note tight
-  // and concrete - it costs context on every reminder.
   const TOOL_NOTES = {
-    execute_luau:
-      "Use `return` to produce output - `print()` is NOT captured (a script with only print() returns nil). " +
-      "Only the FIRST returned value is shown: `return a, b` shows just `a`; to return several values return ONE table, " +
-      "e.g. `return {ok=true, n=3}` (tables come back as JSON). " +
-      "Runs synchronously with a ~20s budget: a brief `task.wait(1)` is fine, but anything that can block or never resolve will TIME OUT. " +
-      "ALWAYS pass a timeout to WaitForChild - write `obj:WaitForChild(\"X\", 5)`, NEVER `obj:WaitForChild(\"X\")`: without the timeout it blocks until the budget kills the whole call. " +
-      "Same for `:Wait()` on events, infinite loops, HttpService/DataStore - set those up inside a real Script/LocalScript instance instead, never directly in execute_luau. " +
-      "Property types must match exactly (e.g. Position needs Vector3.new(...), not a string). " +
-      "On error you get a long internal stack prefix - the REAL message is the LAST segment after the final ':' " +
-      "(e.g. '... : Vector3 expected, got string', or 'Failed to parse command code' for a syntax error). " +
-      "Create objects with Instance.new and set .Parent; reach services via game:GetService(\"Name\").",
-    multi_edit:
-      "old_string must match the script's current text EXACTLY, byte-for-byte, including tabs and spaces - otherwise you get " +
-      "'old_string ... not found in current content'. ALWAYS script_read the file FIRST and copy the exact text. " +
-      "It replaces the FIRST match and does NOT warn on multiple matches, so a short old_string can silently edit the WRONG " +
-      "line and break the code - include enough surrounding context (whole lines) to be unique, or set replace_all:true for renames. " +
-      "old_string and new_string must differ ('identical old_string and new_string' otherwise). " +
-      "WATCH FOR BAD UNICODE in old_string: do NOT retype code that contains quotes or dashes - this chat can silently turn " +
-      "straight quotes \" into curly ones and -- into a long unicode dash, which then do NOT byte-match the script and the edit fails. " +
-      "Paste old_string verbatim from script_read. (new_string may contain unicode safely - it is written as-is.) " +
-      "Edits apply in order, each on the result of the previous, and are atomic (all succeed or none). " +
-      "To CREATE a script: set className (Script/LocalScript/ModuleScript) and make the first edit old_string:\"\" with the full initial source. " +
-      "datamodel_type must be \"Edit\".",
-    inspect_instance:
-      "Path is dot-notation and case-insensitive, e.g. 'Workspace.Model.Part'. Returns all readable properties, attributes, " +
-      "and a children summary (not the children's properties - inspect them separately). If several instances share the path, " +
-      "up to 20 matches are returned. Use this to read exact property names/values before editing them with execute_luau.",
-    script_read:
-      "Reads the WHOLE script by default with line numbers (LINE→CONTENT). Use it before multi_edit so your old_string " +
-      "matches exactly. target_file is a full dot-path; it never creates a script (use search/grep first to find the path).",
-    user_keyboard_input:
-      "Simulates a real player typing during PLAY. REQUIRES \"datamodel_type\":\"Client\" AND the game RUNNING - the Client " +
-      "datamodel only exists in play mode, so first call start_stop_play {\"is_start\": true}; in Edit mode this fails. " +
-      "(snapgentV3 auto-fills datamodel_type:\"Client\" if you omit it, but the game must still be running.) " +
-      "\"actions\" is an ORDERED array of OBJECTS - each step MUST be {\"action\": ...}, NOT a bare string (a missing/misnamed action " +
-      "gives 'Unknown ... action: nil'). action is one of: keyDown | keyUp | keyPress (down+up) | textInput | wait. " +
-      "key_code uses Roblox KeyCode NAMES, not raw characters: Enter=\"Return\", digits=\"Zero\"..\"Nine\", letters=single uppercase " +
-      "\"A\"..\"Z\", plus \"Space\", \"Backspace\", \"Tab\", arrows \"Up\"/\"Down\"/\"Left\"/\"Right\", modifiers \"LeftShift\"/\"LeftControl\"/\"LeftAlt\" " +
-      "- REQUIRED on keyDown/keyUp/keyPress ('key_code is required' otherwise). To type a whole string use ONE textInput step with " +
-      "\"text_inputs\":\"hello\" instead of many keyPress. A \"wait\" step MUST carry \"wait_time_ms\" (0-10000) ('wait_time_ms is required " +
-      "for wait action' otherwise). Optional \"instance_path\" routes input to a focused GUI element and must start with game, LocalPlayer " +
-      "or Workspace (e.g. \"LocalPlayer.PlayerGui.Menu.NameBox\"); omit it to send to whatever currently has focus. " +
-      "Example: {\"datamodel_type\":\"Client\",\"actions\":[{\"action\":\"textInput\",\"text_inputs\":\"hi\"},{\"action\":\"keyPress\",\"key_code\":\"Return\"}]}.",
-    generate_mesh:
-      "Unlike generate_procedural_model, this call YIELDS: it blocks until the AI mesh generation finishes and only then " +
-      "returns the result (the finished mesh) - there is no separate poll/wait step needed, just wait for the response.",
-    generate_procedural_model:
-      "Unlike generate_mesh, this call does NOT yield: it returns immediately with a generationId while the model builds " +
-      "in the background and auto-inserts into the workspace once done - do NOT run other commands assuming the model already " +
-      "exists yet. Do NOT call wait_job_finished as a reflex right after this - but DO call it (pass the generationId) whenever " +
-      "you actually need the finished result before continuing: either the user explicitly asked to wait, or your next step " +
-      "depends on the model being done (e.g. editing/coloring it, checking its geometry).",
-    user_mouse_input:
-      "Simulates real player mouse actions during PLAY. Same requirement as user_keyboard_input: \"datamodel_type\":\"Client\" (auto-filled " +
-      "if omitted) AND the game RUNNING (start_stop_play {\"is_start\": true} first; fails in Edit mode). " +
-      "\"actions\" is an ORDERED array of OBJECTS - each step MUST be {\"action\": ...}, NOT a bare string (a missing/misnamed action gives " +
-      "'Unknown mouse action: nil'). action is one of: moveTo | mouseButtonDown | mouseButtonUp | mouseButtonClick | scrollUp | scrollDown | wait. " +
-      "You MUST establish a position BEFORE any click/scroll: the FIRST step needs \"x\"/\"y\" (screen pixels) OR \"instance_path\" " +
-      "(starts with game/LocalPlayer/Workspace; if set, x/y are ignored) - else 'Either x and y, instance_path, or a prior action ... is " +
-      "required'. Later steps may omit x/y and reuse the last position (click then scroll at the same spot). " +
-      "mouseButtonDown/Up/Click need \"mouse_button\":\"left\" or \"right\". A \"wait\" step needs \"wait_time_ms\" (0-10000). " +
-      "Example: {\"datamodel_type\":\"Client\",\"actions\":[{\"action\":\"mouseButtonClick\",\"mouse_button\":\"left\",\"instance_path\":\"LocalPlayer.PlayerGui.Menu.PlayBtn\"}]}.",
+    read_file: "Reads file content. Path is relative to the active workspace folder.",
+    write_file: "Writes full content to file. Path is relative to the active workspace folder.",
+    edit_file: "Edits file content by replacing old_text with new_text. old_text must match exactly.",
+    list_dir: "Lists directory entries. Defaults to current workspace root ('.').",
+    run_command: "Runs a command in the workspace directory with bash/sh.",
   };
 
-  // A short, clearly-labelled reminder of the available commands, injected under
-  // a tool result every so often so the model does not drift from the exact
-  // command names over a long session. It is explicitly framed as an automatic
-  // snapgentV3 reminder (NOT a user message and NOT a new command to run).
   function toolsReminder(tools, targetName = "VS Code", serverId = "vscode") {
+    const isZed = serverId === "zededitor" || serverId === "zed";
+    const prefix = isZed ? "zededitor" : "vscode";
+    const displayName = isZed ? "Zed Editor" : "VS Code";
     const toolsString =
-      `  list_commands(server: "${serverId}") - list available ${targetName} commands with full parameter details\n` +
-      compactTools(tools);
+      `  list_commands(server: "${prefix}") - list available ${displayName} commands with full parameter details\n` +
+      compactTools(tools, prefix);
     return (
       "\n\n────────────────────────────────\n" +
       "(System note from snapgentV3 - this is an automatic REMINDER, not a request and not a new result. " +
       "Do NOT reply to it or run any command because of it; just keep it in mind for your next command.)\n" +
-      `Reminder of the ${targetName} commands (use exact names and parameter keys; ` +
-      "only this selected target is available in this session):\n" +
+      `Reminder of ${displayName} commands (MUST use the "${prefix}/" prefix, e.g. ${prefix}/read_file):\n` +
       toolsString
     );
   }
 
-  // One-line memory nudge, appended to the periodic reminder, so the model keeps
-  // its project memory current without us forcing a write. Clearly framed as an
-  // optional reminder, NOT a command to run right now.
   function memoryNudge() {
-    return (
-      "(Reminder: if you've learned anything DURABLE about this project since your last memory update " +
-      "(architecture, where things live, conventions, decisions, user preferences), update your shared project memory at " +
-      "game.ServerStorage.snapgentV3.Memory with multi_edit - only useful, lasting facts. If nothing changed, ignore this.)"
-    );
+    return "";
   }
 
   return {
