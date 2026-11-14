@@ -69,18 +69,8 @@ def log_chat_error(category: str, error_msg: str, details: Optional[Dict[str, An
 
 
 def log_chat_activity(event: str, data: Optional[Dict[str, Any]] = None) -> None:
-    try:
-        LOGS_CHAT_DIR.mkdir(parents=True, exist_ok=True)
-        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-        entry = {
-            "timestamp": timestamp,
-            "event": event,
-            "data": data or {},
-        }
-        with open(CHAT_ACTIVITY_LOG, "a", encoding="utf-8") as f:
-            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
-    except Exception:
-        pass
+    # Activity logging disabled to avoid accumulating disk space
+    pass
 
 
 def _json_line(value: Any) -> str:
