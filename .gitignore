@@ -21,6 +21,7 @@ config.json.bak-*
 # Local dev / diagnostic tools
 probe.py
 logs/
+logs_chat/
 devtools/
 
 # System files

@@ -6,6 +6,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 from urllib.parse import unquote, urlparse
@@ -239,13 +240,21 @@ def find_files(path: str = ".", pattern: str = "*") -> List[str]:
     return matches[:MAX_RESULTS]
 
 
-def search_files(path: str, query: str, file_pattern: str = "*", case_sensitive: bool = False) -> List[Dict[str, Any]]:
+def search_files(path: str = ".", query: str = "", file_pattern: str = "*", case_sensitive: bool = False) -> List[Dict[str, Any]]:
+    # Fallback if path is empty or passed as query
+    if not path:
+        path = "."
+    if not query and path and path != ".":
+        root = get_root()
+        if not (root / path).exists():
+            query = path
+            path = "."
     root = get_root()
     target = normalize_target(path, root)
     if not target.exists():
         raise FileNotFoundError(f"Path not found: {path}")
     if not query.strip():
-        raise ValueError("Search query cannot be empty.")
+        raise ValueError("Search query cannot be empty. Please provide 'query' parameter.")
     needle = query if case_sensitive else query.lower()
     matches: List[Dict[str, Any]] = []
     files = [target] if target.is_file() else _iter_files(target)
@@ -267,6 +276,19 @@ def search_files(path: str, query: str, file_pattern: str = "*", case_sensitive:
                 if len(matches) >= MAX_RESULTS:
                     return matches
     return matches
+
+
+def list_commands() -> List[Dict[str, Any]]:
+    """List available commands and their descriptions."""
+    return [
+        {
+            "name": tool["name"],
+            "description": tool["description"],
+            "parameters": list(tool["inputSchema"].get("properties", {}).keys()),
+            "required": tool["inputSchema"].get("required", []),
+        }
+        for tool in TOOLS
+    ]
 
 
 def read_file(path: str) -> str:
@@ -554,7 +576,7 @@ TOOLS = [
     _tool("list_dir", "List files and folders in the workspace.", {"path": STR}),
     _tool("list_tree", "List a bounded tree of workspace files and folders.", {"path": STR, "max_depth": {"type": "integer", "minimum": 0, "maximum": 8}}),
     _tool("find_files", "Find workspace files by glob pattern.", {"path": STR, "pattern": STR}),
-    _tool("search_files", "Search text in workspace files.", {"path": STR, "query": STR, "file_pattern": STR, "case_sensitive": {"type": "boolean"}}, ["path", "query"]),
+    _tool("search_files", "Search text in workspace files.", {"path": {"type": "string", "description": "Relative folder or file to search in (defaults to '.' for entire workspace)"}, "query": STR, "file_pattern": STR, "case_sensitive": {"type": "boolean"}}, ["query"]),
     _tool("read_file", "Read a UTF-8 text file in the workspace.", {"path": STR}, ["path"]),
     _tool("read_files", "Read up to 50 workspace files.", {"paths": {"type": "array", "items": STR}}, ["paths"]),
     _tool("read_file_lines", "Read a bounded line range from a workspace file.", {"path": STR, "start_line": {"type": "integer", "minimum": 1}, "end_line": {"type": "integer", "minimum": 1}}, ["path"]),
@@ -580,36 +602,85 @@ TOOLS = [
 ]
 
 
+def _get_arg(args: Dict[str, Any], *keys: str, default: Any = None) -> Any:
+    for k in keys:
+        if k in args and args[k] is not None:
+            return args[k]
+    return default
+
+
+def _req_arg(args: Dict[str, Any], *keys: str) -> Any:
+    for k in keys:
+        if k in args and args[k] is not None:
+            return args[k]
+    raise ValueError(f"Missing required parameter: '{keys[0]}'")
+
+
+def _log_error(tool_name: str, arguments: Dict[str, Any], error: Exception) -> None:
+    try:
+        log_dir = Path(__file__).resolve().parent / "logs_chat"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file = log_dir / "chat_errors.log"
+        entry = {
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "server": "vscode",
+            "tool": tool_name,
+            "arguments": arguments,
+            "error_type": type(error).__name__,
+            "error": str(error),
+        }
+        with open(log_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+
+
 def tool_dispatch(name: str, args: Dict[str, Any]) -> Any:
     handlers = {
+        "list_commands": lambda: list_commands(),
+        "list_tools": lambda: list_commands(),
         "get_workspace_info": lambda: get_workspace_info(),
         "get_project_info": lambda: get_project_info(),
-        "list_dir": lambda: list_dir(args.get("path", ".")),
-        "list_tree": lambda: list_tree(args.get("path", "."), args.get("max_depth", 3)),
-        "find_files": lambda: find_files(args.get("path", "."), args.get("pattern", "*")),
-        "search_files": lambda: search_files(args["path"], args["query"], args.get("file_pattern", "*"), args.get("case_sensitive", False)),
-        "read_file": lambda: read_file(args["path"]),
-        "read_files": lambda: read_files(args["paths"]),
-        "read_file_lines": lambda: read_file_lines(args["path"], args.get("start_line", 1), args.get("end_line", 200)),
-        "get_file_info": lambda: get_file_info(args["path"]),
-        "get_file_outline": lambda: get_file_outline(args["path"]),
-        "create_file": lambda: create_file(args["path"], args.get("content", "")),
-        "write_file": lambda: write_file(args["path"], args["content"]),
-        "edit_file": lambda: edit_file(args["path"], args["old_text"], args["new_text"], args.get("replace_all", False)),
-        "create_directory": lambda: create_directory(args["path"]),
-        "move_file": lambda: move_file(args["source"], args["destination"]),
-        "copy_file": lambda: copy_file(args["source"], args["destination"]),
+        "list_dir": lambda: list_dir(_get_arg(args, "path", "dir", "directory", default=".")),
+        "list_tree": lambda: list_tree(_get_arg(args, "path", "dir", default="."), int(_get_arg(args, "max_depth", "maxDepth", "depth", default=3))),
+        "find_files": lambda: find_files(_get_arg(args, "path", "dir", default="."), _get_arg(args, "pattern", "glob", default="*")),
+        "search_files": lambda: search_files(
+            _get_arg(args, "path", "dir", default="."),
+            _req_arg(args, "query", "text", "search_text", "pattern"),
+            _get_arg(args, "file_pattern", "filePattern", default="*"),
+            bool(_get_arg(args, "case_sensitive", "caseSensitive", default=False)),
+        ),
+        "read_file": lambda: read_file(_req_arg(args, "path", "file", "filepath")),
+        "read_files": lambda: read_files(_req_arg(args, "paths", "files")),
+        "read_file_lines": lambda: read_file_lines(
+            _req_arg(args, "path", "file"),
+            int(_get_arg(args, "start_line", "startLine", default=1)),
+            int(_get_arg(args, "end_line", "endLine", default=200)),
+        ),
+        "get_file_info": lambda: get_file_info(_req_arg(args, "path", "file")),
+        "get_file_outline": lambda: get_file_outline(_req_arg(args, "path", "file")),
+        "create_file": lambda: create_file(_req_arg(args, "path", "file"), _get_arg(args, "content", "text", default="")),
+        "write_file": lambda: write_file(_req_arg(args, "path", "file"), _req_arg(args, "content", "text")),
+        "edit_file": lambda: edit_file(
+            _req_arg(args, "path", "file"),
+            _req_arg(args, "old_text", "oldText", "target"),
+            _req_arg(args, "new_text", "newText", "replacement"),
+            bool(_get_arg(args, "replace_all", "replaceAll", default=False)),
+        ),
+        "create_directory": lambda: create_directory(_req_arg(args, "path", "dir", "directory")),
+        "move_file": lambda: move_file(_req_arg(args, "source", "src", "from"), _req_arg(args, "destination", "dest", "to")),
+        "copy_file": lambda: copy_file(_req_arg(args, "source", "src", "from"), _req_arg(args, "destination", "dest", "to")),
         "git_status": lambda: git_status(),
-        "git_diff": lambda: git_diff(args.get("path", "")),
-        "git_log": lambda: git_log(args.get("limit", 10)),
+        "git_diff": lambda: git_diff(_get_arg(args, "path", "file", default="")),
+        "git_log": lambda: git_log(int(_get_arg(args, "limit", default=10))),
         "git_branches": lambda: git_branches(),
-        "run_command": lambda: run_command(args["command"], args.get("args", [])),
-        "run_project_script": lambda: run_project_script(args["script"]),
+        "run_command": lambda: run_command(_req_arg(args, "command", "cmd"), _get_arg(args, "args", "arguments", default=[])),
+        "run_project_script": lambda: run_project_script(_req_arg(args, "script", "name")),
         "run_tests": lambda: run_tests(),
-        "delete_file": lambda: delete_file(args["path"]),
-        "apply_patch": lambda: apply_patch(args["path"], args["edits"]),
-        "git_add": lambda: git_add(args["paths"]),
-        "git_commit": lambda: git_commit(args["message"]),
+        "delete_file": lambda: delete_file(_req_arg(args, "path", "file")),
+        "apply_patch": lambda: apply_patch(_req_arg(args, "path", "file"), _req_arg(args, "edits", "patches")),
+        "git_add": lambda: git_add(_req_arg(args, "paths", "files")),
+        "git_commit": lambda: git_commit(_req_arg(args, "message", "msg")),
     }
     handler = handlers.get(name)
     if handler is None:
@@ -654,6 +725,7 @@ def handle_request(request: Dict[str, Any]) -> None:
                 },
             })
         except Exception as error:
+            _log_error(params.get("name", ""), params.get("arguments") or {}, error)
             send_message({
                 "jsonrpc": "2.0",
                 "id": request_id,

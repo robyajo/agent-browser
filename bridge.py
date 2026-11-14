@@ -27,6 +27,9 @@ else:
     ROOT = Path(__file__).resolve().parent
 CONFIG_PATH = ROOT / "config.json"
 LOG_PATH = ROOT / "logs" / "bridge_debug.log"
+LOGS_CHAT_DIR = ROOT / "logs_chat"
+CHAT_ERROR_LOG = LOGS_CHAT_DIR / "chat_errors.log"
+CHAT_ACTIVITY_LOG = LOGS_CHAT_DIR / "chat_activity.log"
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("ZS_BRIDGE_PORT", "17613"))
 HTTP_PORT = int(os.environ.get("ZS_HTTP_PORT", "17614"))
@@ -35,6 +38,7 @@ BRIDGE_VERSION = "3.9.4"
 MAX_LOG_CHARS = 1000
 
 LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+LOGS_CHAT_DIR.mkdir(parents=True, exist_ok=True)
 logging.basicConfig(
     filename=str(LOG_PATH),
     level=logging.INFO,
@@ -46,6 +50,37 @@ logging.basicConfig(
 def log(message: str) -> None:
     logging.info(message)
     print(message, flush=True)
+
+
+def log_chat_error(category: str, error_msg: str, details: Optional[Dict[str, Any]] = None) -> None:
+    try:
+        LOGS_CHAT_DIR.mkdir(parents=True, exist_ok=True)
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        entry = {
+            "timestamp": timestamp,
+            "category": category,
+            "error": str(error_msg),
+            "details": details or {},
+        }
+        with open(CHAT_ERROR_LOG, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+
+
+def log_chat_activity(event: str, data: Optional[Dict[str, Any]] = None) -> None:
+    try:
+        LOGS_CHAT_DIR.mkdir(parents=True, exist_ok=True)
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        entry = {
+            "timestamp": timestamp,
+            "event": event,
+            "data": data or {},
+        }
+        with open(CHAT_ACTIVITY_LOG, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
 
 
 def _json_line(value: Any) -> str:
@@ -555,11 +590,13 @@ class Bridge:
                 text_parts.append(json.dumps(structured, ensure_ascii=False))
             text = "\n".join(text_parts)
             if result.get("isError"):
+                log_chat_error("tool_result_error", text or "MCP tool failed.", {"tool": name, "arguments": arguments})
                 await self._send_client(
                     websocket,
                     {"type": "tool_result", "id": request_id, "ok": False, "error": text or "MCP tool failed."},
                 )
             else:
+                log_chat_activity("tool_call_success", {"tool": name, "preview": text[:120]})
                 await self._send_client(
                     websocket,
                     {"type": "tool_result", "id": request_id, "ok": True, "text": text, "images": images},
@@ -567,6 +604,7 @@ class Bridge:
             log(f"<- {name} ({text[:120].replace(chr(10), ' ')})")
         except (asyncio.TimeoutError, RuntimeError, OSError, ValueError) as error:
             message = str(error)
+            log_chat_error("tool_call_exception", message, {"tool": name, "arguments": arguments})
             await self._send_client(
                 websocket,
                 {
@@ -816,6 +854,8 @@ class Bridge:
                 if not prompt:
                     prompt = "Hello"
 
+                log_chat_activity("incoming_prompt", {"model": model, "prompt_preview": prompt[:160], "prompt_length": len(prompt)})
+
                 async with self._client_lock:
                     clients = list(self.clients)
 
@@ -826,6 +866,7 @@ class Bridge:
                             "type": "server_error"
                         }
                     }
+                    log_chat_error("no_ai_tab_connected", "No browser AI tab connected to bridge", {"model": model, "prompt_preview": prompt[:160]})
                     body = json.dumps(err_resp, ensure_ascii=False).encode("utf-8")
                     writer.write(
                         b"HTTP/1.1 503 Service Unavailable\r\n"
@@ -862,6 +903,7 @@ class Bridge:
                         try:
                             kind, data = await asyncio.wait_for(queue.get(), timeout=180.0)
                         except asyncio.TimeoutError:
+                            log_chat_error("browser_timeout", "Timeout waiting for AI response from browser tab", {"model": model, "req_id": req_id})
                             chunk = {"error": {"message": "Timeout menunggu respons dari tab browser AI."}}
                             writer.write(f"data: {json.dumps(chunk)}\n\n".encode("utf-8"))
                             writer.write(b"data: [DONE]\n\n")
@@ -879,6 +921,7 @@ class Bridge:
                             writer.write(f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n".encode("utf-8"))
                             await writer.drain()
                         elif kind == "done":
+                            log_chat_activity("prompt_completed", {"model": model, "req_id": req_id})
                             chunk = {
                                 "id": f"chatcmpl-{req_id}",
                                 "object": "chat.completion.chunk",

@@ -1065,12 +1065,13 @@
       );
     }
     // Virtual command: list available commands with full details.
-    if (name === "list_commands" || name === "list_tools") {
+    const bare = bareToolName(name);
+    if (name === "list_commands" || name === "list_tools" || bare === "list_commands" || bare === "list_tools") {
       await ensureTools();
       const target = (selectedTargetId === "zed" ? "zededitor" : selectedTargetId) || "vscode";
       const asked = typeof args.server === "string" ? args.server.trim() : "";
       const isTargetMatch = !asked || asked === target ||
-        ((target === "zededitor" || target === "zed") && (asked === "zededitor" || asked === "zed"));
+        ((target === "zededitor" || target === "zed") && (asked === "zededitor" || asked === "zed" || name.startsWith("zed")));
       if (!isTargetMatch) {
         return `Output of '${name}':\nERROR: server "${asked}" is not available. Only the selected target "${target}" can be used in this session. Do NOT try other servers; ask the user to switch the target in the snapgentV3 selector if needed.`;
       }

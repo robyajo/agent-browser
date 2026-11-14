@@ -99,6 +99,24 @@ class ZedMcpTests(unittest.TestCase):
             self.assertIn("Error", resp["result"]["content"][0]["text"])
 
 
+    def test_search_files_without_path(self):
+        zed_mcp.create_file("sample.txt", "line with target_keyword here\n")
+        results = zed_mcp.tool_dispatch("search_files", {"query": "target_keyword"})
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["path"], "sample.txt")
+
+    def test_list_commands_dispatch(self):
+        commands = zed_mcp.tool_dispatch("list_commands", {})
+        self.assertGreaterEqual(len(commands), 28)
+        self.assertTrue(any(c["name"] == "search_files" for c in commands))
+
+    def test_tool_dispatch_argument_aliases(self):
+        zed_mcp.create_file("alias_test.txt", "content")
+        # 'file' alias instead of 'path'
+        content = zed_mcp.tool_dispatch("read_file", {"file": "alias_test.txt"})
+        self.assertEqual(content, "content")
+
+
 class WorkspaceResolutionTests(unittest.TestCase):
     def test_env_var_override(self):
         with tempfile.TemporaryDirectory() as tmpdir:
