@@ -3195,8 +3195,13 @@
 `  "openai": {\n` +
 `    "api_url": "http://127.0.0.1:17614/v1",\n` +
 `    "available_models": [\n` +
-`      { "name": "deepseek-web", "display_name": "Snapgent DeepSeek (Web Free)", "max_tokens": 16384 },\n` +
-`      { "name": "qwen-web", "display_name": "Snapgent Qwen (Web Free)", "max_tokens": 16384 }\n` +
+`      { "name": "web-ai", "display_name": "Switch AI (Active Tab)", "max_tokens": 64000, "supports_tools": true },\n` +
+`      { "name": "deepseek-web", "display_name": "DeepSeek Web", "max_tokens": 64000, "supports_tools": true },\n` +
+`      { "name": "qwen-web", "display_name": "Qwen Web", "max_tokens": 64000, "supports_tools": true },\n` +
+`      { "name": "chatgpt-web", "display_name": "ChatGPT Web", "max_tokens": 64000, "supports_tools": true },\n` +
+`      { "name": "claude-web", "display_name": "Claude Web", "max_tokens": 64000, "supports_tools": true },\n` +
+`      { "name": "gemini-web", "display_name": "Gemini Web", "max_tokens": 64000, "supports_tools": true },\n` +
+`      { "name": "meta-web", "display_name": "Meta AI Web", "max_tokens": 64000, "supports_tools": true }\n` +
 `    ]\n` +
 `  }\n` +
 `}` +

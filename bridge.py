@@ -722,9 +722,19 @@ class Bridge:
                 models_data = {
                     "object": "list",
                     "data": [
-                        {"id": "deepseek-web", "object": "model", "owned_by": "snapgent"},
-                        {"id": "qwen-web", "object": "model", "owned_by": "snapgent"},
-                        {"id": "web-ai", "object": "model", "owned_by": "snapgent"},
+                        {"id": "web-ai", "object": "model", "owned_by": "snapgent", "display_name": "Switch AI / Active Browser Tab (Snapgent Free)"},
+                        {"id": "chatgpt-web", "object": "model", "owned_by": "snapgent", "display_name": "ChatGPT Web (Snapgent Free)"},
+                        {"id": "claude-web", "object": "model", "owned_by": "snapgent", "display_name": "Claude Web (Snapgent Free)"},
+                        {"id": "gemini-web", "object": "model", "owned_by": "snapgent", "display_name": "Gemini Web (Snapgent Free)"},
+                        {"id": "meta-web", "object": "model", "owned_by": "snapgent", "display_name": "Meta AI Web (Snapgent Free)"},
+                        {"id": "deepseek-web", "object": "model", "owned_by": "snapgent", "display_name": "DeepSeek Web (Snapgent Free)"},
+                        {"id": "qwen-web", "object": "model", "owned_by": "snapgent", "display_name": "Qwen Web (Snapgent Free)"},
+                        {"id": "mistral-web", "object": "model", "owned_by": "snapgent", "display_name": "Mistral Web (Snapgent Free)"},
+                        {"id": "grok-web", "object": "model", "owned_by": "snapgent", "display_name": "Grok Web (Snapgent Free)"},
+                        {"id": "kimi-web", "object": "model", "owned_by": "snapgent", "display_name": "Kimi Web (Snapgent Free)"},
+                        {"id": "glm-web", "object": "model", "owned_by": "snapgent", "display_name": "GLM Web (Snapgent Free)"},
+                        {"id": "ptero-web", "object": "model", "owned_by": "snapgent", "display_name": "Ptero Web (Snapgent Free)"},
+                        {"id": "arena-web", "object": "model", "owned_by": "snapgent", "display_name": "Arena Web (Snapgent Free)"},
                     ]
                 }
                 # Merge models from Antigravity Bridge if running
@@ -768,8 +778,13 @@ class Bridge:
                 model = payload.get("model", "deepseek-web")
 
                 # If non-web model, forward transparently to Antigravity Bridge on port 20129
-                web_models = ("deepseek-web", "qwen-web", "web-ai")
-                if model not in web_models:
+                known_web_ids = {
+                    "web-ai", "chatgpt-web", "claude-web", "gemini-web", "meta-web",
+                    "deepseek-web", "qwen-web", "mistral-web", "grok-web", "kimi-web",
+                    "glm-web", "ptero-web", "arena-web",
+                }
+                is_web_model = model in known_web_ids or model.endswith("-web") or "web" in model
+                if not is_web_model:
                     try:
                         up_reader, up_writer = await asyncio.open_connection("127.0.0.1", 20129)
                         req_str = f"{method} {path} HTTP/1.1\r\n"
@@ -807,7 +822,7 @@ class Bridge:
                 if not clients:
                     err_resp = {
                         "error": {
-                            "message": "Belum ada tab chat (DeepSeek/Qwen) yang terhubung ke Snapgent Bridge. Buka chat.deepseek.com atau chat.qwen.ai di browser Anda.",
+                            "message": "Belum ada tab chat AI (ChatGPT, Claude, Gemini, Meta AI, DeepSeek, Qwen, dll) yang terhubung ke Snapgent Bridge. Buka salah satu situs AI yang didukung di browser Anda.",
                             "type": "server_error"
                         }
                     }

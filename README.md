@@ -101,14 +101,82 @@ Add the `language_models` block:
       "api_url": "http://127.0.0.1:17614/v1",
       "available_models": [
         {
+          "name": "web-ai",
+          "display_name": "Switch AI / Active Tab (Snapgent Free)",
+          "max_tokens": 64000,
+          "supports_tools": true
+        },
+        {
+          "name": "chatgpt-web",
+          "display_name": "ChatGPT Web (Snapgent Free)",
+          "max_tokens": 64000,
+          "supports_tools": true
+        },
+        {
+          "name": "claude-web",
+          "display_name": "Claude Web (Snapgent Free)",
+          "max_tokens": 64000,
+          "supports_tools": true
+        },
+        {
+          "name": "gemini-web",
+          "display_name": "Gemini Web (Snapgent Free)",
+          "max_tokens": 64000,
+          "supports_tools": true
+        },
+        {
+          "name": "meta-web",
+          "display_name": "Meta AI Web (Snapgent Free)",
+          "max_tokens": 64000,
+          "supports_tools": true
+        },
+        {
           "name": "deepseek-web",
-          "display_name": "Snapgent DeepSeek (Web Free)",
-          "max_tokens": 16384
+          "display_name": "DeepSeek Web (Snapgent Free)",
+          "max_tokens": 64000,
+          "supports_tools": true
         },
         {
           "name": "qwen-web",
-          "display_name": "Snapgent Qwen (Web Free)",
-          "max_tokens": 16384
+          "display_name": "Qwen Web (Snapgent Free)",
+          "max_tokens": 64000,
+          "supports_tools": true
+        },
+        {
+          "name": "mistral-web",
+          "display_name": "Mistral Web (Snapgent Free)",
+          "max_tokens": 64000,
+          "supports_tools": true
+        },
+        {
+          "name": "grok-web",
+          "display_name": "Grok Web (Snapgent Free)",
+          "max_tokens": 64000,
+          "supports_tools": true
+        },
+        {
+          "name": "kimi-web",
+          "display_name": "Kimi Web (Snapgent Free)",
+          "max_tokens": 64000,
+          "supports_tools": true
+        },
+        {
+          "name": "glm-web",
+          "display_name": "GLM Web (Snapgent Free)",
+          "max_tokens": 64000,
+          "supports_tools": true
+        },
+        {
+          "name": "ptero-web",
+          "display_name": "Ptero Web (Snapgent Free)",
+          "max_tokens": 64000,
+          "supports_tools": true
+        },
+        {
+          "name": "arena-web",
+          "display_name": "Arena Web (Snapgent Free)",
+          "max_tokens": 64000,
+          "supports_tools": true
         }
       ]
     }
@@ -116,11 +184,13 @@ Add the `language_models` block:
 }
 ```
 
+> 💡 **Tip "Switch AI" (`web-ai`)**: Dengan memilih model **Switch AI / Active Tab**, Anda bebas berganti-ganti tab AI di browser (misalnya dari ChatGPT ke Claude atau Meta AI), dan Zed Assistant akan otomatis meneruskan prompt ke tab AI yang sedang aktif tanpa perlu mengubah konfigurasi lagi!
+
 #### 2. Start Chatting in Zed
 1. Ensure the bridge is running (`./start_zed.sh` or `start_zed.bat`).
-2. Keep a browser tab open with `https://chat.deepseek.com` or `https://chat.qwen.ai` logged in.
+2. Keep a browser tab open with any supported AI (ChatGPT, Claude, Gemini, Meta AI, DeepSeek, Qwen, Grok, Mistral, dll).
 3. In Zed Editor, open the Assistant panel (`Ctrl + ?` or `Cmd + ?`).
-4. Select model: **Snapgent DeepSeek (Web Free)** or **Snapgent Qwen (Web Free)**.
+4. Select model: **Switch AI / Active Tab** (atau pilih model web spesifik).
 5. Ask your prompt! The AI uses prefix-aware commands like `zededitor/read_file` to interact with your workspace.
 
 ---

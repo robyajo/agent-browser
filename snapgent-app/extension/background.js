@@ -283,12 +283,41 @@ async function handleExternalPrompt(msg) {
         ws.send(JSON.stringify({
           type: "external_prompt_error",
           id: msg.id,
-          error: "Belum ada tab chat (DeepSeek / Qwen / Claude) yang dibuka di browser. Buka chat.deepseek.com atau chat.qwen.ai terlebih dahulu."
+          error: "Belum ada tab chat AI (ChatGPT, Claude, Gemini, Meta AI, DeepSeek, Qwen, dll) yang dibuka di browser. Buka salah satu situs AI terlebih dahulu."
         }));
       }
       return;
     }
-    const target = tabs.find(t => t.active) || tabs[0];
+
+    const model = (msg.model || "").toLowerCase();
+    const HOST_KEYWORDS = {
+      "chatgpt": ["chatgpt.com", "chat.openai.com"],
+      "claude": ["claude.ai"],
+      "gemini": ["gemini.google.com"],
+      "deepseek": ["deepseek.com"],
+      "qwen": ["qwen.ai"],
+      "meta": ["meta.ai"],
+      "mistral": ["mistral.ai"],
+      "grok": ["grok.com"],
+      "kimi": ["kimi.ai"],
+      "glm": ["chat.z.ai"],
+      "ptero": ["ptero.pro"],
+      "arena": ["arena.ai"]
+    };
+
+    let target = null;
+    for (const [key, hosts] of Object.entries(HOST_KEYWORDS)) {
+      if (model.includes(key)) {
+        target = tabs.find(t => hosts.some(h => (t.url || "").includes(h)));
+        if (target) break;
+      }
+    }
+
+    // Switch AI / fallback to active tab or first available AI tab
+    if (!target) {
+      target = tabs.find(t => t.active) || tabs[0];
+    }
+
     chrome.tabs.sendMessage(target.id, {
       type: "ZS_RUN_EXTERNAL_PROMPT",
       id: msg.id,
